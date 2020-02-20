@@ -1,27 +1,21 @@
-# OS X
-.DS_Store*
-Icon?
-._*
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Linux
-.directory
-*~
-
-
-# npm
+.DS_Store
 node_modules
-package-lock.json
-*.log
-*.gz
+/dist
 
+# local env files
+.env.local
+.env.*.local
 
-# Coveralls
-coverage
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Benchmarking
-benchmarks/graphs
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
