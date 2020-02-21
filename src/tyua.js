@@ -14,10 +14,13 @@ const device = new TuyAPI({
 });
 
 // Find device on network
-device.find().then(() => {
-  // Connect to device
-  device.connect();
-});
+device
+  .find()
+  .then(() => {
+    // Connect to device
+    device.connect();
+  })
+  .catch(err => console.log('Tyua device not found'));
 
 // Add event listeners
 device.on('connected', () => {
