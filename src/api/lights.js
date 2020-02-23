@@ -1,10 +1,10 @@
 const express = require('express');
 const LIGHTS_TOPIC = 'toms-room/lights';
-const sendMqtt = require('../mqtt');
-const sendTyua = require('../tyua');
+const sendMqtt = require('../mqtt/mqtt');
+const sendTyua = require('../mqtt/tyua');
 const router = express.Router();
 
-const Device = require('../schema/Device');
+const Device = require('../model/Device');
 
 router.get('/status', async (req, res) => {
   const devices = await Device.find({ name: req.query.lightName });

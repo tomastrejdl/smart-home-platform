@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
-const Room = require('../../schema/Room');
+const Device = require('../../model/Device');
+const Room = require('../../model/Room');
 
 router.get('/', async (req, res) => {
   const rooms = await Room.find({}, err => err && console.log(err));
@@ -14,6 +15,7 @@ router.get('/:roomId', async (req, res) => {
     if (rooms.length == 1) res.send(rooms[0]);
     else res.sendStatus(404);
   } catch (err) {
+    console.error(err);
     res.sendStatus(404);
   }
 });
@@ -23,6 +25,7 @@ router.post(
   [
     check('name')
       .isString()
+      .trim()
       .isLength(3),
   ],
   async (req, res) => {
@@ -55,6 +58,12 @@ router.put('/:roomId', async (req, res) => {
 });
 
 router.delete('/:roomId', async (req, res) => {
+  const devices = await Device.find({ roomId: req.params.roomId });
+  devices.forEach(device => {
+    device.roomId = { name: 'none' };
+    device.save();
+  });
+
   Room.findOneAndDelete({ _id: req.params.roomId }, (err, room) => {
     if (err) console.error(err);
     if (!room) res.sendStatus(404);

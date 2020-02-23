@@ -1,13 +1,10 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-let DeviceSchema = mongoose.Schema({
+let DeviceSchema = new Schema({
   name: String,
-  type: String,
-  controlType: String,
   macAddress: String,
-  pin: Number,
-  state: String,
-  roomId: String,
+  roomId: Schema.ObjectId,
 });
 
 module.exports = mongoose.model('Device', DeviceSchema);
