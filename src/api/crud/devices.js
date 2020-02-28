@@ -12,13 +12,15 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/searchDevices', async (req, res) => {
+  const usedMacs = (await Device.find({})).map(device => device.macAddress);
+  console.log(usedMacs);
+
   let foundDevices = [];
   mqtt.on('global/discoveryResponse', function(message) {
-    console.log('MQTT message from discovery: ', message);
-    foundDevices.push(JSON.parse(message));
+    if (!usedMacs.includes(message.macAddress)) foundDevices.push(message);
   });
   mqtt.sendMqtt('global/discovery', 'report');
-  setTimeout(() => res.status(200).send(foundDevices), 2000);
+  setTimeout(() => res.status(200).send(foundDevices), 1000);
 });
 
 router.get('/:deviceId', async (req, res) => {
@@ -39,7 +41,7 @@ router.post(
       .isString()
       .trim()
       .isLength(3),
-    // check('macAddress').isMACAddress(),
+    check('macAddress').isMACAddress(),
     check('roomId')
       .optional({ nullable: true })
       .isMongoId(),
@@ -51,6 +53,12 @@ router.post(
       .isIn(roomIds)
       .run(req);
 
+    const usedMacs = (await Device.find({})).map(device => device.macAddress);
+    await check('macAddress', 'A device with this MAC adress is already setup')
+      .not()
+      .isIn(usedMacs)
+      .run(req);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json({ errors: errors.array() });
@@ -58,7 +66,10 @@ router.post(
 
     const device = new Device(req.body);
     device.save(function(err, device) {
-      if (err) return console.error(err);
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
       res.status(201).send(device);
     });
   },
@@ -72,7 +83,10 @@ router.put('/:deviceId', async (req, res) => {
       new: true,
     },
     (err, device) => {
-      if (err) return console.log(err);
+      if (err) {
+        console.log(err);
+        return res.status(500).send(err);
+      }
       if (!device) res.sendStatus(404);
       else res.status(200).send(device);
     },
@@ -85,11 +99,17 @@ router.delete('/:deviceId', async (req, res) => {
   ).map(attachment => attachment._id);
 
   Attachment.deleteMany({ deviceId: req.params.deviceId }, err => {
-    if (err) console.error(err);
+    if (err) {
+      console.error(err);
+      return res.status(500).send(err);
+    }
   });
 
   Device.findOneAndDelete({ _id: req.params.deviceId }, (err, device) => {
-    if (err) console.error(err);
+    if (err) {
+      console.error(err);
+      return res.status(500).send(err);
+    }
     if (!device) res.sendStatus(404);
     else
       res.status(200).send({

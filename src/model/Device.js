@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 let DeviceSchema = new Schema({
   name: String,
-  macAddress: String,
+  macAddress: { type: String, unique: true },
   roomId: Schema.ObjectId,
 });
 

@@ -10,7 +10,7 @@ let CharacteristicSchema = new Schema({
 let AttachmentSchema = new Schema({
   name: String,
   type: String,
-  pin: Number,
+  pinNumber: Number,
   deviceId: Schema.ObjectId,
   characteristics: {
     isOn: CharacteristicSchema,

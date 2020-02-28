@@ -36,7 +36,10 @@ router.post(
 
     const room = new Room(req.body);
     room.save(function(err, room) {
-      if (err) return console.error(err);
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
       res.status(201).send(room);
     });
   },
@@ -50,7 +53,10 @@ router.put('/:roomId', async (req, res) => {
       new: true,
     },
     (err, room) => {
-      if (err) return console.log(err);
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
       if (!room) res.sendStatus(404);
       else res.status(200).send(room);
     },
@@ -65,7 +71,10 @@ router.delete('/:roomId', async (req, res) => {
   });
 
   Room.findOneAndDelete({ _id: req.params.roomId }, (err, room) => {
-    if (err) console.error(err);
+    if (err) {
+      console.error(err);
+      return res.status(500).send(err);
+    }
     if (!room) res.sendStatus(404);
     else res.sendStatus(200);
   });

@@ -20,27 +20,29 @@ device
     // Connect to device
     device.connect();
   })
-  .catch(err => console.log('Tyua device not found'));
+  .catch(err => console.log('Tuya device not found'));
 
 // Add event listeners
 device.on('connected', () => {
-  console.log('Connected to Tyua device!');
+  console.log('Connected to Tuya device!');
+  sendTuya(true);
 });
 
 device.on('disconnected', () => {
-  console.log('Disconnected from Tyua device.');
+  console.log('Disconnected from Tuya device.');
 });
 
 device.on('error', error => {
   console.log('Error!', error);
 });
 
-function sendTyua(value) {
+function sendTuya(value) {
   if (device.isConnected()) {
+    console.log('Sending Tyua: ', value);
     device.set({ set: value });
   } else {
-    console.error('Error: Tyua device disconnected');
+    console.error('Error: Tuya device disconnected');
   }
 }
 
-module.exports = sendTyua;
+module.exports = sendTuya;

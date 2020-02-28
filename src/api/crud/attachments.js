@@ -5,7 +5,7 @@ const Device = require('../../model/Device');
 const Attachment = require('../../model/Attachment');
 const Room = require('../../model/Room');
 const { LIGHT, SOCKET } = require('../../model/attachment_types');
-const { sendMqtt } = require('../../mqtt/mqtt');
+const mqtt = require('../../mqtt/mqtt');
 
 router.get('/', async (req, res) => {
   const attachments = await Attachment.find({}, err => err && console.log());
@@ -33,7 +33,7 @@ router.post(
     check('type')
       .isString()
       .isIn(['light', 'socket']),
-    check('pin').isNumeric(),
+    check('pinNumber').isNumeric(),
     check('deviceId').isMongoId(),
   ],
   async (req, res) => {
@@ -60,8 +60,22 @@ router.post(
 
         break;
     }
-    attachment.save(function(err, attachment) {
-      if (err) return console.error(err);
+    attachment.save(async function(err, attachment) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+      const device = await Device.findById(attachment.deviceId);
+      const room = await Room.findById(device.roomId);
+
+      mqtt.sendMqtt(
+        'global/' + device.macAddress,
+        JSON.stringify({
+          roomId: room._id,
+          deviceId: device._id,
+          pinNumber: attachment.pinNumber,
+        }),
+      );
       res.status(201).send(attachment);
     });
   },
@@ -75,7 +89,10 @@ router.put('/:attachmentId', async (req, res) => {
       new: true,
     },
     (err, attachment) => {
-      if (err) return console.log(err);
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
       if (!attachment) res.sendStatus(404);
       else res.status(200).send(attachment);
     },
@@ -86,7 +103,10 @@ router.delete('/:attachmentId', async (req, res) => {
   Attachment.findOneAndDelete(
     { _id: req.params.attachmentId },
     (err, attachment) => {
-      if (err) console.error(err);
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
       if (!attachment) res.sendStatus(404);
       else res.sendStatus(200);
     },
@@ -99,7 +119,7 @@ router.post('/:attachmentId/toggle', async (req, res) => {
     if (att) {
       const device = await Device.findById(att.deviceId);
       const room = await Room.findById(device.roomId);
-      const roomName = room ? room.name : 'global';
+      const roomId = room ? room._id : 'global';
       switch (att.type) {
         case LIGHT:
         case SOCKET:
@@ -108,15 +128,10 @@ router.post('/:attachmentId/toggle', async (req, res) => {
           att.save(function(err, attachment) {
             if (err) return console.error(err);
             const topic =
-              roomName.toLowerCase() +
-              '/' +
-              device.name.toLowerCase().replace(' ', '-');
-            const message =
-              attachment.name.toLowerCase().replace(' ', '-') +
-              ' ' +
-              (isOn.value ? 'on' : 'off');
+              roomId + '/' + device._id + '/' + attachment.pinNumber;
+            const message = isOn.value ? 'on' : 'off';
             console.log('Sending MQTT:', topic, message);
-            sendMqtt(topic, message);
+            mqtt.sendMqtt(topic, message);
             res.status(200).send({ newValue: attachment });
           });
 

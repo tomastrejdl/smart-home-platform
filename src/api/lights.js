@@ -1,7 +1,7 @@
 const express = require('express');
 const LIGHTS_TOPIC = 'toms-room/lights';
 const sendMqtt = require('../mqtt/mqtt');
-const sendTyua = require('../mqtt/tyua');
+const sendTuya = require('../mqtt/tuya');
 const router = express.Router();
 
 const Device = require('../model/Device');
@@ -30,7 +30,7 @@ router.post('/order', (req, res) => {
     console.log('Turning light ' + lightName + ' ' + targetState);
     sendMqtt(LIGHTS_TOPIC, lightName + ' ' + targetState);
 
-    if (lightName == 'desk') sendTyua(targetState == 'on' ? true : false);
+    if (lightName == 'desk') sendTuya(targetState == 'on' ? true : false);
 
     res.send({ success: true, currentState: targetState });
   } else {
