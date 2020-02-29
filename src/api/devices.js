@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
-const Device = require('../../model/Device');
-const Attachment = require('../../model/Attachment');
-const Room = require('../../model/Room');
-const mqtt = require('../../mqtt/mqtt');
+const Device = require('../model/Device');
+const Attachment = require('../model/Attachment');
+const Room = require('../model/Room');
+const mqtt = require('../mqtt/mqtt');
 
 router.get('/', async (req, res) => {
   const devices = await Device.find({}, err => err && console.log());
@@ -65,6 +65,7 @@ router.post(
     }
 
     const device = new Device(req.body);
+    device.isOnline = true;
     device.save(function(err, device) {
       if (err) {
         console.error(err);

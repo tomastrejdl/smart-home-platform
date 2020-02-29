@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
-const Device = require('../../model/Device');
-const Attachment = require('../../model/Attachment');
-const Room = require('../../model/Room');
+const Device = require('../model/Device');
+const Attachment = require('../model/Attachment');
+const Room = require('../model/Room');
 
-const mqtt = require('../../mqtt/mqtt');
+const mqtt = require('../mqtt/mqtt');
 
 router.get('/', async (req, res) => {
   const rooms = await Room.find({}, err => err && console.log(err));

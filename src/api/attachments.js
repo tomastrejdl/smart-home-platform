@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
-const Device = require('../../model/Device');
-const Attachment = require('../../model/Attachment');
-const Room = require('../../model/Room');
-const AttachmentType = require('../../model/attachment-types');
-const mqtt = require('../../mqtt/mqtt');
+const Device = require('../model/Device');
+const Attachment = require('../model/Attachment');
+const Room = require('../model/Room');
+const AttachmentType = require('../model/attachment-types');
+const mqtt = require('../mqtt/mqtt');
 
 router.get('/', async (req, res) => {
   const attachments = await Attachment.find({}, err => err && console.log());
@@ -96,6 +96,7 @@ router.post(
           isOpen: {
             type: 'boolean',
             value: false,
+            interval: 10_000,
           },
         };
         break;

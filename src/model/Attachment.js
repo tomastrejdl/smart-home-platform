@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 let CharacteristicSchema = new Schema({
-  type: String,
+  type: {
+    type: String,
+    enum: ['string', 'integer', 'float', 'boolean'],
+  },
   units: String,
   value: Schema.Types.Mixed,
   interval: Number,
@@ -10,7 +13,10 @@ let CharacteristicSchema = new Schema({
 
 let AttachmentSchema = new Schema({
   name: String,
-  type: String,
+  type: {
+    type: String,
+    enum: ['light', 'socket', 'temperature-sensor', 'door-sensor'],
+  },
   pinNumber: Number,
   deviceId: Schema.ObjectId,
   characteristics: {

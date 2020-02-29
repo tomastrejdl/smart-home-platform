@@ -30,8 +30,21 @@ client.on('message', async function(topic, message) {
       listeners[topic][i](payload);
   }
 
-  if (topic == 'global/isOnlineReport') {
-    sendConfigToDevice(payload.macAddress);
+  if (topic == 'global/deviceState') {
+    const device = await Device.find({ macAddress: payload.macAddress });
+    if (payload.state == 'online') {
+      device.isOnline = true;
+      sendConfigToDevice(payload.macAddress);
+    }
+    if (payload.state == 'offline') {
+      device.isOnline = false;
+    }
+    device.save(async function(err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+    });
   }
 
   if (topic == 'global/temperature') {
@@ -50,6 +63,24 @@ client.on('message', async function(topic, message) {
     });
     attachment.characteristics.temperature.value = payload.temperature;
     attachment.characteristics.humidity.value = payload.humidity;
+    attachment.save(async function(err, attachment) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+    });
+  }
+
+  if (topic == 'global/door') {
+    const attachment = await Attachment.findById(payload.attachmentId);
+    const event = new Event({
+      attachmentId: payload.attachmentId,
+      type: 'door',
+      time: Date.now(),
+      message: { state: payload.state },
+    });
+    attachment.characteristics.isOpen.value =
+      payload.state == 'open' ? true : false;
     attachment.save(async function(err, attachment) {
       if (err) {
         console.error(err);
@@ -103,6 +134,10 @@ async function sendConfigToDevice(macAddress) {
             tempInterval:
               attachment.type == AttachmentType.TEMPERATURE_SENSOR
                 ? attachment.characteristics.temperature.interval
+                : 0,
+            doorInterval:
+              attachment.type == AttachmentType.DOOR_SENSOR
+                ? attachment.characteristics.isOpen.interval
                 : 0,
           }),
         ),
