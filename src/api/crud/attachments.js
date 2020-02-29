@@ -4,7 +4,7 @@ const { check, validationResult } = require('express-validator');
 const Device = require('../../model/Device');
 const Attachment = require('../../model/Attachment');
 const Room = require('../../model/Room');
-const { LIGHT, SOCKET } = require('../../model/attachment_types');
+const AttachmentType = require('../../model/attachment-types');
 const mqtt = require('../../mqtt/mqtt');
 
 router.get('/', async (req, res) => {
@@ -14,8 +14,8 @@ router.get('/', async (req, res) => {
 
 router.get('/:attachmentId', async (req, res) => {
   try {
-    const attachments = await Attachment.find({ _id: req.params.attachmentId });
-    if (attachments.length == 1) res.send(attachments[0]);
+    const attachment = await Attachment.findById(req.params.attachmentId);
+    if (attachment) res.send(attachment);
     else res.sendStatus(404);
   } catch (err) {
     console.error(err);
@@ -32,7 +32,12 @@ router.post(
       .isLength(3),
     check('type')
       .isString()
-      .isIn(['light', 'socket']),
+      .isIn([
+        AttachmentType.LIGHT,
+        AttachmentType.SOCKET,
+        AttachmentType.TEMPERATURE_SENSOR,
+        AttachmentType.DOOR_SENSOR,
+      ]),
     check('pinNumber').isNumeric(),
     check('deviceId').isMongoId(),
   ],
@@ -42,6 +47,16 @@ router.post(
       .isIn(deviceIds)
       .run(req);
 
+    const usedPins = (
+      await Attachment.find({ deviceId: req.body.deviceId })
+    ).map(att => att.pinNumber);
+    console.log(usedPins);
+
+    await check('pinNumber', 'This pin is already used')
+      .not()
+      .isIn(usedPins)
+      .run(req);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json({ errors: errors.array() });
@@ -49,15 +64,40 @@ router.post(
 
     const attachment = new Attachment(req.body);
     switch (attachment.type) {
-      case LIGHT:
-      case SOCKET:
+      case AttachmentType.LIGHT:
+      case AttachmentType.SOCKET:
         attachment.characteristics = {
           isOn: {
             type: 'boolean',
             value: false,
           },
         };
+        break;
 
+      case AttachmentType.TEMPERATURE_SENSOR:
+        attachment.characteristics = {
+          temperature: {
+            type: 'float',
+            units: 'celsius',
+            value: -273.15,
+            interval: 10_000,
+          },
+          humidity: {
+            type: 'float',
+            units: 'percent',
+            value: 0,
+            interval: 10_000,
+          },
+        };
+        break;
+
+      case AttachmentType.DOOR_SENSOR:
+        attachment.characteristics = {
+          isOpen: {
+            type: 'boolean',
+            value: false,
+          },
+        };
         break;
     }
     attachment.save(async function(err, attachment) {
@@ -71,9 +111,14 @@ router.post(
       mqtt.sendMqtt(
         'global/' + device.macAddress,
         JSON.stringify({
-          roomId: room._id,
           deviceId: device._id,
+          attachmentId: attachment._id,
+          attachmentType: attachment.type,
           pinNumber: attachment.pinNumber,
+          tempInterval:
+            attachment.type == AttachmentType.TEMPERATURE_SENSOR
+              ? attachment.characteristics.temperature.interval
+              : 0,
         }),
       );
       res.status(201).send(attachment);
@@ -121,14 +166,14 @@ router.post('/:attachmentId/toggle', async (req, res) => {
       const room = await Room.findById(device.roomId);
       const roomId = room ? room._id : 'global';
       switch (att.type) {
-        case LIGHT:
-        case SOCKET:
+        case AttachmentType.LIGHT:
+        case AttachmentType.SOCKET:
           const isOn = att.characteristics.isOn;
           isOn.value = !isOn.value;
           att.save(function(err, attachment) {
             if (err) return console.error(err);
             const topic =
-              roomId + '/' + device._id + '/' + attachment.pinNumber;
+              att.type + 's/' + device._id + '/' + attachment.pinNumber;
             const message = isOn.value ? 'on' : 'off';
             console.log('Sending MQTT:', topic, message);
             mqtt.sendMqtt(topic, message);

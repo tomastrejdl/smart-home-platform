@@ -1,7 +1,6 @@
 const express = require('express');
 const LIGHTS_TOPIC = 'toms-room/lights';
 const sendMqtt = require('../mqtt/mqtt');
-const sendTuya = require('../mqtt/tuya');
 const router = express.Router();
 
 const Device = require('../model/Device');

@@ -2,9 +2,10 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 let CharacteristicSchema = new Schema({
-  name: String,
   type: String,
+  units: String,
   value: Schema.Types.Mixed,
+  interval: Number,
 });
 
 let AttachmentSchema = new Schema({
@@ -14,6 +15,9 @@ let AttachmentSchema = new Schema({
   deviceId: Schema.ObjectId,
   characteristics: {
     isOn: CharacteristicSchema,
+    isOpen: CharacteristicSchema,
+    temperature: CharacteristicSchema,
+    humidity: CharacteristicSchema,
   },
 });
 
