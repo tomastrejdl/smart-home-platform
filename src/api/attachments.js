@@ -38,7 +38,7 @@ router.post(
         AttachmentType.TEMPERATURE_SENSOR,
         AttachmentType.DOOR_SENSOR,
       ]),
-    check('pinNumber').isNumeric(),
+    check('pin').isIn(['D1', 'D2', 'D3', 'D4']),
     check('deviceId').isMongoId(),
   ],
   async (req, res) => {
@@ -49,10 +49,10 @@ router.post(
 
     const usedPins = (
       await Attachment.find({ deviceId: req.body.deviceId })
-    ).map(att => att.pinNumber);
+    ).map(att => att.pin);
     console.log(usedPins);
 
-    await check('pinNumber', 'This pin is already used')
+    await check('pin', 'This pin is already used')
       .not()
       .isIn(usedPins)
       .run(req);
@@ -80,13 +80,13 @@ router.post(
             type: 'float',
             units: 'celsius',
             value: -273.15,
-            interval: 10_000,
+            interval: 1_000,
           },
           humidity: {
             type: 'float',
             units: 'percent',
             value: 0,
-            interval: 10_000,
+            interval: 1_000,
           },
         };
         break;
@@ -96,7 +96,7 @@ router.post(
           isOpen: {
             type: 'boolean',
             value: false,
-            interval: 10_000,
+            interval: 1_000,
           },
         };
         break;
@@ -115,10 +115,14 @@ router.post(
           deviceId: device._id,
           attachmentId: attachment._id,
           attachmentType: attachment.type,
-          pinNumber: attachment.pinNumber,
+          pin: attachment.pin,
           tempInterval:
             attachment.type == AttachmentType.TEMPERATURE_SENSOR
               ? attachment.characteristics.temperature.interval
+              : 0,
+          doorInterval:
+            attachment.type == AttachmentType.DOOR_SENSOR
+              ? attachment.characteristics.isOpen.interval
               : 0,
         }),
       );
@@ -173,8 +177,7 @@ router.post('/:attachmentId/toggle', async (req, res) => {
           isOn.value = !isOn.value;
           att.save(function(err, attachment) {
             if (err) return console.error(err);
-            const topic =
-              att.type + 's/' + device._id + '/' + attachment.pinNumber;
+            const topic = att.type + 's/' + device._id + '/' + attachment.pin;
             const message = isOn.value ? 'on' : 'off';
             console.log('Sending MQTT:', topic, message);
             mqtt.sendMqtt(topic, message);

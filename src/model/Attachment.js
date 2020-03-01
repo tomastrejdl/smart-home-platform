@@ -17,7 +17,10 @@ let AttachmentSchema = new Schema({
     type: String,
     enum: ['light', 'socket', 'temperature-sensor', 'door-sensor'],
   },
-  pinNumber: Number,
+  pin: {
+    type: String,
+    enum: ['D1', 'D2', 'D3', 'D4']
+  },
   deviceId: Schema.ObjectId,
   characteristics: {
     isOn: CharacteristicSchema,

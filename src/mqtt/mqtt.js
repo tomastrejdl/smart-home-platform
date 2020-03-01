@@ -31,20 +31,22 @@ client.on('message', async function(topic, message) {
   }
 
   if (topic == 'global/deviceState') {
-    const device = await Device.find({ macAddress: payload.macAddress });
-    if (payload.state == 'online') {
-      device.isOnline = true;
-      sendConfigToDevice(payload.macAddress);
-    }
-    if (payload.state == 'offline') {
-      device.isOnline = false;
-    }
-    device.save(async function(err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
+    const device = await Device.findOne({ macAddress: payload.macAddress });
+    if (device) {
+      if (payload.state == 'online') {
+        device.isOnline = true;
+        sendConfigToDevice(payload.macAddress);
       }
-    });
+      if (payload.state == 'offline') {
+        device.isOnline = false;
+      }
+      device.save(async function(err, device) {
+        if (err) {
+          console.error(err);
+          return res.status(500).send(err);
+        }
+      });
+    }
   }
 
   if (topic == 'global/temperature') {
@@ -130,7 +132,7 @@ async function sendConfigToDevice(macAddress) {
             deviceId: device._id,
             attachmentId: attachment._id,
             attachmentType: attachment.type,
-            pinNumber: attachment.pinNumber,
+            pin: attachment.pin,
             tempInterval:
               attachment.type == AttachmentType.TEMPERATURE_SENSOR
                 ? attachment.characteristics.temperature.interval
@@ -145,6 +147,19 @@ async function sendConfigToDevice(macAddress) {
     }
   });
 }
+
+// Set all device to offline on startup
+Device.find().then(devices => {
+  devices.forEach(device => {
+    device.isOnline = false;
+    device.save(async function(err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+    });
+  });
+});
 
 // Send new config to all devices on statup
 sendConfigToDevice().then(() => {

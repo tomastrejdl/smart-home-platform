@@ -97,7 +97,7 @@ router.post('/:roomId/toggleAllLights', async (req, res) => {
     isOn.value = !isOn.value;
     att.save(function(err, attachment) {
       if (err) return console.error(err);
-      const topic = att.type + 's/' + att.deviceId + '/' + attachment.pinNumber;
+      const topic = att.type + 's/' + att.deviceId + '/' + attachment.pin;
       const message = isOn.value ? 'on' : 'off';
       console.log('Sending MQTT:', topic, message);
       mqtt.sendMqtt(topic, message);
