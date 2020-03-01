@@ -4,8 +4,8 @@ const { check, validationResult } = require('express-validator');
 const Device = require('../model/Device');
 const Attachment = require('../model/Attachment');
 const Room = require('../model/Room');
-const AttachmentType = require('../model/attachment-types');
 const mqtt = require('../mqtt/mqtt');
+const AttachmentType = require('../model/attachment-types');
 
 router.get('/', async (req, res) => {
   const attachments = await Attachment.find({}, err => err && console.log());
@@ -109,7 +109,7 @@ router.post(
       const device = await Device.findById(attachment.deviceId);
       const room = await Room.findById(device.roomId);
 
-      mqtt.sendMqtt(
+      mqtt.send(
         'global/' + device.macAddress,
         JSON.stringify({
           deviceId: device._id,
@@ -180,7 +180,7 @@ router.post('/:attachmentId/toggle', async (req, res) => {
             const topic = att.type + 's/' + device._id + '/' + attachment.pin;
             const message = isOn.value ? 'on' : 'off';
             console.log('Sending MQTT:', topic, message);
-            mqtt.sendMqtt(topic, message);
+            mqtt.send(topic, message);
             res.status(200).send({ newValue: attachment });
           });
 

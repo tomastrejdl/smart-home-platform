@@ -19,7 +19,7 @@ router.get('/searchDevices', async (req, res) => {
   mqtt.on('global/discoveryResponse', function(message) {
     if (!usedMacs.includes(message.macAddress)) foundDevices.push(message);
   });
-  mqtt.sendMqtt('global/discovery', 'report');
+  mqtt.send('global/discovery', 'report');
   setTimeout(() => res.status(200).send(foundDevices), 1000);
 });
 

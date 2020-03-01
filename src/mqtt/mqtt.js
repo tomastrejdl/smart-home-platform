@@ -8,11 +8,13 @@ const Device = require('../model/Device');
 const Room = require('../model/Room');
 const Attachment = require('../model/Attachment');
 const Event = require('../model/Event');
+const EventDaily = require('../model/EventDaily');
 
 let listeners = {};
 
 client.on('connect', function() {
   console.log('Connected to MQTT broker at ', mqttConfig.brokerUrl);
+  client.publish('global/reportOnlineState');
   client.subscribe('global/#', err => {
     if (err) console.error('Error: Failed to subscribe to topic');
   });
@@ -30,85 +32,145 @@ client.on('message', async function(topic, message) {
       listeners[topic][i](payload);
   }
 
-  if (topic == 'global/deviceState') {
-    const device = await Device.findOne({ macAddress: payload.macAddress });
-    if (device) {
-      if (payload.state == 'online') {
-        device.isOnline = true;
-        sendConfigToDevice(payload.macAddress);
-      }
-      if (payload.state == 'offline') {
-        device.isOnline = false;
-      }
-      device.save(async function(err, device) {
-        if (err) {
-          console.error(err);
-          return res.status(500).send(err);
-        }
-      });
-    }
+  switch (topic) {
+    case 'global/deviceState':
+      onDeviceState(payload);
+      break;
+    case 'global/temperature':
+      onTemperatureEvent(payload);
+      break;
+    case 'global/door':
+      onDoorEvent(payload);
+      break;
+    default:
+    // console.log('No handler for topic: ', topic);
   }
-
-  if (topic == 'global/temperature') {
-    const attachment = await Attachment.findById(payload.attachmentId);
-    const event = new Event({
-      attachmentId: payload.attachmentId,
-      type: 'temperature-humidity',
-      time: Date.now(),
-      message: { temperature: payload.temperature, humidity: payload.humidity },
-    });
-    event.save(async function(err, event) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
-      }
-    });
-    attachment.characteristics.temperature.value = payload.temperature;
-    attachment.characteristics.humidity.value = payload.humidity;
-    attachment.save(async function(err, attachment) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
-      }
-    });
-  }
-
-  if (topic == 'global/door') {
-    const attachment = await Attachment.findById(payload.attachmentId);
-    const event = new Event({
-      attachmentId: payload.attachmentId,
-      type: 'door',
-      time: Date.now(),
-      message: { state: payload.state },
-    });
-    attachment.characteristics.isOpen.value =
-      payload.state == 'open' ? true : false;
-    attachment.save(async function(err, attachment) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
-      }
-    });
-  }
-
-  //   const state = JSON.parse(fs.readFileSync(STATE_FILE));
-  //   state[payload[0]] = payload[1];
-  //   fs.writeFileSync(STATE_FILE, JSON.stringify(state));
-  //   if (payload[0] == 'desk') {
-  //     sendTuya(payload[1] == 'on' ? true : false);
-  //   }
-  //   if (payload[0] == 'all') {
-  //     sendTuya(payload[1] == 'on' ? true : false);
-  //     // Turn on other lights
-  //   }
 });
+
+// -----------------------------------------------------------------
+// TOPIC HANDLERS
+
+async function onDeviceState(payload) {
+  const device = await Device.findOne({ macAddress: payload.macAddress });
+  if (device && payload.isOnline != undefined) {
+    device.isOnline = payload.isOnline;
+    if (payload.isOnline) sendConfigToDevice(payload.macAddress);
+    device.save(err => err && console.error(err));
+  } else {
+    console.log(
+      "Received malformed payload in 'global/deviceState': ",
+      payload,
+    );
+  }
+}
+
+async function onTemperatureEvent(payload) {
+  const attachment = await Attachment.findById(payload.attachmentId);
+  const now = new Date();
+  const today = now.setHours(0, 0, 0, 0);
+
+  const today_th = await EventDaily.findOne({
+    type: 'temperature',
+    timestamp_day: today,
+  });
+  if (today_th) {
+    today_th.values.push(payload.temperature);
+    today_th.num_samples += 1;
+    today_th.totalTemp += payload.temperature;
+    today_th.save(err => err && console.error(err));
+  } else {
+    const th = new EventDaily({
+      attachmentId: payload.attachmentId,
+      type: 'temperature',
+      timestamp_day: today,
+      num_samples: 1,
+      sum: payload.temperature,
+      values: [payload.temperature],
+    });
+    th.save(err => err && console.error(err));
+  }
+
+  const today_hh = await EventDaily.findOne({
+    type: 'humidity',
+    timestamp_day: today,
+  });
+  if (today_hh) {
+    today_th.values.push(payload.temperature);
+    today_th.num_samples += 1;
+    today_th.totalTemp += payload.temperature;
+    today_hh.save(err => err && console.error(err));
+  } else {
+    const hh = new EventDaily({
+      attachmentId: payload.attachmentId,
+      type: 'humidity',
+      timestamp_day: today,
+      num_samples: 1,
+      sum: payload.humidity,
+      values: [payload.humidity],
+    });
+    hh.save(err => err && console.error(err));
+  }
+
+  attachment.characteristics.temperature.value = payload.temperature;
+  attachment.characteristics.humidity.value = payload.humidity;
+  attachment.save(err => err && console.error(err));
+}
+
+async function onDoorEvent(payload) {
+  const attachment = await Attachment.findById(payload.attachmentId);
+  const now = new Date();
+  const today = now.setHours(0, 0, 0, 0);
+
+  EventDaily.findOneAndUpdate(
+    {
+      attachmentId: payload.attachmentId,
+      timestamp_day: today,
+      type: 'door',
+    },
+    {
+      $push: {
+        values: payload.state,
+      },
+    },
+    { upsert: true },
+    function(err, doc) {
+      if (err) {
+        console.log(err);
+      }
+    },
+  );
+
+  // const today_door = await EventDaily.findOne({
+  //   type: 'door',
+  //   timestamp_day: today,
+  // });
+
+  // if (today_door) {
+  //   today_door.values.push(payload.state);
+  //   today_door.save(err => err && console.error(err));
+  // } else {
+  //   const door = new EventDaily({
+  //     attachmentId: payload.attachmentId,
+  //     type: 'door',
+  //     timestamp_day: today,
+  //     values: [payload.state],
+  //   });
+  //   door.save(err => err && console.error(err));
+  // }
+
+  attachment.characteristics.isOpen.value =
+    payload.state == 'open' ? true : false;
+  attachment.save(err => err && console.error(err));
+}
+
+// -----------------------------------------------------------------
 
 function on(topic, callback) {
   if (listeners[topic] == undefined) listeners[topic] = [];
   listeners[topic].push(callback);
 }
 
-function sendMqtt(topic, data) {
+function send(topic, data) {
   if (client.connected == true) client.publish(topic, data);
   else console.error('Error: Client disconnedted from MQTT broker.');
 }
@@ -126,7 +188,7 @@ async function sendConfigToDevice(macAddress) {
       const attachments = await Attachment.find({ deviceId: device._id });
 
       attachments.forEach(attachment =>
-        sendMqtt(
+        send(
           'global/' + device.macAddress,
           JSON.stringify({
             deviceId: device._id,
@@ -152,12 +214,7 @@ async function sendConfigToDevice(macAddress) {
 Device.find().then(devices => {
   devices.forEach(device => {
     device.isOnline = false;
-    device.save(async function(err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
-      }
-    });
+    device.save(err => err && console.error(err));
   });
 });
 
@@ -166,4 +223,4 @@ sendConfigToDevice().then(() => {
   console.log('Send new config to all devices!');
 });
 
-module.exports = { sendMqtt, on };
+module.exports = { send, on };

@@ -4,7 +4,6 @@ const { check, validationResult } = require('express-validator');
 const Device = require('../model/Device');
 const Attachment = require('../model/Attachment');
 const Room = require('../model/Room');
-
 const mqtt = require('../mqtt/mqtt');
 
 router.get('/', async (req, res) => {
@@ -100,7 +99,7 @@ router.post('/:roomId/toggleAllLights', async (req, res) => {
       const topic = att.type + 's/' + att.deviceId + '/' + attachment.pin;
       const message = isOn.value ? 'on' : 'off';
       console.log('Sending MQTT:', topic, message);
-      mqtt.sendMqtt(topic, message);
+      mqtt.send(topic, message);
     });
   });
   res.sendStatus(200);
