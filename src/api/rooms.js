@@ -93,7 +93,7 @@ router.post('/:roomId/toggleAllLights', async (req, res) => {
 
   attachments.forEach(att => {
     const isOn = att.characteristics.isOn;
-    isOn.value = !isOn.value;
+    isOn.value = req.body.targetState;
     att.save(function(err, attachment) {
       if (err) return console.error(err);
       const topic = att.type + 's/' + att.deviceId + '/' + attachment.pin;
