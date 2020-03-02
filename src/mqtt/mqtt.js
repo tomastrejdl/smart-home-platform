@@ -3,12 +3,9 @@ const config = require('config');
 const mqttConfig = config.get('mqtt');
 var client = mqtt.connect(mqttConfig.brokerUrl);
 
-const AttachmentType = require('../model/attachment-types');
 const Device = require('../model/Device');
-const Room = require('../model/Room');
 const Attachment = require('../model/Attachment');
 const Event = require('../model/Event');
-const EventDaily = require('../model/EventDaily');
 
 let listeners = {};
 
@@ -80,7 +77,7 @@ async function onTemperatureEvent(payload) {
   const now = new Date();
   const today = now.setHours(0, 0, 0, 0);
 
-  const today_th = await EventDaily.findOne({
+  const today_th = await Event.findOne({
     type: 'temperature',
     timestamp_day: today,
   });
@@ -90,7 +87,7 @@ async function onTemperatureEvent(payload) {
     today_th.totalTemp += payload.temperature;
     today_th.save(err => err && console.error(err));
   } else {
-    const th = new EventDaily({
+    const th = new Event({
       attachmentId: payload.attachmentId,
       type: 'temperature',
       timestamp_day: today,
@@ -101,7 +98,7 @@ async function onTemperatureEvent(payload) {
     th.save(err => err && console.error(err));
   }
 
-  const today_hh = await EventDaily.findOne({
+  const today_hh = await Event.findOne({
     type: 'humidity',
     timestamp_day: today,
   });
@@ -111,7 +108,7 @@ async function onTemperatureEvent(payload) {
     today_th.totalTemp += payload.temperature;
     today_hh.save(err => err && console.error(err));
   } else {
-    const hh = new EventDaily({
+    const hh = new Event({
       attachmentId: payload.attachmentId,
       type: 'humidity',
       timestamp_day: today,
@@ -131,7 +128,7 @@ async function onDoorEvent(payload) {
   const now = new Date();
   const today = now.setHours(0, 0, 0, 0);
 
-  EventDaily.findOneAndUpdate(
+  Event.findOneAndUpdate(
     {
       attachmentId: payload.attachmentId,
       timestamp_day: today,

@@ -150,7 +150,6 @@ router.post('/:attachmentId/toggle', async (req, res) => {
     if (att) {
       const device = await Device.findById(att.deviceId);
       const room = await Room.findById(device.roomId);
-      const roomId = room ? room._id : 'global';
       switch (att.type) {
         case AttachmentType.LIGHT:
         case AttachmentType.SOCKET:
