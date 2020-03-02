@@ -8,7 +8,11 @@ let CharacteristicSchema = new Schema({
   },
   units: String,
   value: Schema.Types.Mixed,
-  interval: Number,
+  sampleInterval: { type: Number, default: 1000 },
+  invert: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 let AttachmentSchema = new Schema({
@@ -19,7 +23,7 @@ let AttachmentSchema = new Schema({
   },
   pin: {
     type: String,
-    enum: ['D1', 'D2', 'D3', 'D4']
+    enum: ['D1', 'D2', 'D3', 'D4'],
   },
   deviceId: Schema.ObjectId,
   characteristics: {

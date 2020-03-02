@@ -80,13 +80,11 @@ router.post(
             type: 'float',
             units: 'celsius',
             value: -273.15,
-            interval: 1_000,
           },
           humidity: {
             type: 'float',
             units: 'percent',
             value: 0,
-            interval: 1_000,
           },
         };
         break;
@@ -96,7 +94,6 @@ router.post(
           isOpen: {
             type: 'boolean',
             value: false,
-            interval: 1_000,
           },
         };
         break;
@@ -109,23 +106,7 @@ router.post(
       const device = await Device.findById(attachment.deviceId);
       const room = await Room.findById(device.roomId);
 
-      mqtt.send(
-        'global/' + device.macAddress,
-        JSON.stringify({
-          deviceId: device._id,
-          attachmentId: attachment._id,
-          attachmentType: attachment.type,
-          pin: attachment.pin,
-          tempInterval:
-            attachment.type == AttachmentType.TEMPERATURE_SENSOR
-              ? attachment.characteristics.temperature.interval
-              : 0,
-          doorInterval:
-            attachment.type == AttachmentType.DOOR_SENSOR
-              ? attachment.characteristics.isOpen.interval
-              : 0,
-        }),
-      );
+      mqtt.sendConfigToDevice(device.macAddress);
       res.status(201).send(attachment);
     });
   },

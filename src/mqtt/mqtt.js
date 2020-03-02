@@ -15,6 +15,20 @@ let listeners = {};
 client.on('connect', function() {
   console.log('Connected to MQTT broker at ', mqttConfig.brokerUrl);
   client.publish('global/reportOnlineState');
+
+  // Set all device to offline on startup
+  Device.find().then(devices => {
+    devices.forEach(device => {
+      device.isOnline = false;
+      device.save(err => err && console.error(err));
+    });
+  });
+
+  // Send new config to all devices on statup
+  sendConfigToDevice().then(() => {
+    console.log('Send new config to all devices!');
+  });
+
   client.subscribe('global/#', err => {
     if (err) console.error('Error: Failed to subscribe to topic');
   });
@@ -25,7 +39,7 @@ client.on('message', async function(topic, message) {
   try {
     payload = JSON.parse(message.toString());
   } catch (err) {}
-  console.log('MQTT ', topic, payload);
+  console.log('MQTT: ', topic, payload);
 
   if (listeners[topic]) {
     for (let i = 0; i < listeners[topic].length; i++)
@@ -52,15 +66,12 @@ client.on('message', async function(topic, message) {
 
 async function onDeviceState(payload) {
   const device = await Device.findOne({ macAddress: payload.macAddress });
-  if (device && payload.isOnline != undefined) {
+  if (device) {
     device.isOnline = payload.isOnline;
     if (payload.isOnline) sendConfigToDevice(payload.macAddress);
     device.save(err => err && console.error(err));
   } else {
-    console.log(
-      "Received malformed payload in 'global/deviceState': ",
-      payload,
-    );
+    console.log('Device ' + payload.macAddress + ' not yet setup');
   }
 }
 
@@ -117,7 +128,6 @@ async function onTemperatureEvent(payload) {
 }
 
 async function onDoorEvent(payload) {
-  const attachment = await Attachment.findById(payload.attachmentId);
   const now = new Date();
   const today = now.setHours(0, 0, 0, 0);
 
@@ -128,39 +138,18 @@ async function onDoorEvent(payload) {
       type: 'door',
     },
     {
+      $set: {
+        characteristics: {
+          isOpen: payload.isOpen,
+        },
+      },
       $push: {
-        values: payload.state,
+        values: { timestamp: now, isOpen: payload.isOpen },
       },
     },
     { upsert: true },
-    function(err, doc) {
-      if (err) {
-        console.log(err);
-      }
-    },
+    err => err && console.error(err),
   );
-
-  // const today_door = await EventDaily.findOne({
-  //   type: 'door',
-  //   timestamp_day: today,
-  // });
-
-  // if (today_door) {
-  //   today_door.values.push(payload.state);
-  //   today_door.save(err => err && console.error(err));
-  // } else {
-  //   const door = new EventDaily({
-  //     attachmentId: payload.attachmentId,
-  //     type: 'door',
-  //     timestamp_day: today,
-  //     values: [payload.state],
-  //   });
-  //   door.save(err => err && console.error(err));
-  // }
-
-  attachment.characteristics.isOpen.value =
-    payload.state == 'open' ? true : false;
-  attachment.save(err => err && console.error(err));
 }
 
 // -----------------------------------------------------------------
@@ -184,43 +173,27 @@ async function sendConfigToDevice(macAddress) {
   }
   devices.forEach(async device => {
     if (device) {
-      const room = await Room.findById(device.roomId);
       const attachments = await Attachment.find({ deviceId: device._id });
 
-      attachments.forEach(attachment =>
-        send(
-          'global/' + device.macAddress,
-          JSON.stringify({
-            deviceId: device._id,
-            attachmentId: attachment._id,
-            attachmentType: attachment.type,
-            pin: attachment.pin,
-            tempInterval:
-              attachment.type == AttachmentType.TEMPERATURE_SENSOR
-                ? attachment.characteristics.temperature.interval
-                : 0,
-            doorInterval:
-              attachment.type == AttachmentType.DOOR_SENSOR
-                ? attachment.characteristics.isOpen.interval
-                : 0,
-          }),
-        ),
-      );
+      attachments.forEach(attachment => {
+        Object.values(attachment.characteristics)
+          .filter(char => typeof char == 'object')
+          .forEach(ch =>
+            send(
+              'device/' + device.macAddress,
+              JSON.stringify({
+                deviceId: device._id,
+                attachmentId: attachment._id,
+                attachmentType: attachment.type,
+                pin: attachment.pin,
+                sampleInterval: ch.sampleInterval,
+                invert: ch.invert,
+              }),
+            ),
+          );
+      });
     }
   });
 }
 
-// Set all device to offline on startup
-Device.find().then(devices => {
-  devices.forEach(device => {
-    device.isOnline = false;
-    device.save(err => err && console.error(err));
-  });
-});
-
-// Send new config to all devices on statup
-sendConfigToDevice().then(() => {
-  console.log('Send new config to all devices!');
-});
-
-module.exports = { send, on };
+module.exports = { send, sendConfigToDevice, on };
