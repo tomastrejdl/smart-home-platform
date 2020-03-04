@@ -4,14 +4,60 @@ const { check, validationResult } = require('express-validator');
 const Device = require('../model/Device');
 const Attachment = require('../model/Attachment');
 const Room = require('../model/Room');
-const mqtt = require('../mqtt/mqtt');
-const AttachmentType = require('../model/attachment-types');
+const mqtt = require('../../../mqtt/mqtt');
+const AttachmentType = require('../model/attachment-type');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Attachments
+ *   description: Attachment management
+ */
+
+/**
+ * @swagger
+ * path:
+ *  /attachments/:
+ *    get:
+ *      summary: Get a list of all attachments
+ *      tags: [Attachments]
+ *      responses:
+ *        "200":
+ *          description: List of attachments
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: array
+ *                items:
+ *                  $ref: '#/components/schemas/Attachment'
+ */
 router.get('/', async (req, res) => {
   const attachments = await Attachment.find({}, err => err && console.log());
   res.send(attachments);
 });
 
+/**
+ * @swagger
+ * path:
+ *  /attachments/{attachmentId}:
+ *    get:
+ *      summary: Get a attachment by id
+ *      tags: [Attachments]
+ *      parameters:
+ *        - in: path
+ *          name: attachmentId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: Id of the attachment
+ *      responses:
+ *        "200":
+ *          description: A attachment object
+ *          content:
+ *            application/json:
+ *              schema:
+ *                $ref: '#/components/schemas/Attachment'
+ */
 router.get('/:attachmentId', async (req, res) => {
   try {
     const attachment = await Attachment.findById(req.params.attachmentId);
@@ -23,6 +69,27 @@ router.get('/:attachmentId', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * path:
+ *  /attachments/:
+ *    post:
+ *      summary: Create attachment
+ *      tags: [Attachments]
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/Attachment'
+ *      responses:
+ *        "201":
+ *          description: Created attachment
+ *          content:
+ *            application/json:
+ *              schema:
+ *                $ref: '#/components/schemas/Attachment'
+ */
 router.post(
   '/',
   [
@@ -98,7 +165,7 @@ router.post(
         };
         break;
     }
-    attachment.save(async function(err, attachment) {
+    attachment.save(async (err, attachment) => {
       if (err) {
         console.error(err);
         return res.status(500).send(err);
@@ -112,6 +179,34 @@ router.post(
   },
 );
 
+/**
+ * @swagger
+ * path:
+ *  /attachments/{attachmentId}:
+ *    put:
+ *      summary: Update an attachment by id
+ *      tags: [Attachments]
+ *      parameters:
+ *        - in: path
+ *          name: attachmentId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: Id of the attachment
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/Attachment'
+ *      responses:
+ *        "200":
+ *          description: Updated attachment object
+ *          content:
+ *            application/json:
+ *              schema:
+ *                $ref: '#/components/schemas/Attachment'
+ */
 router.put('/:attachmentId', async (req, res) => {
   Attachment.findOneAndUpdate(
     { _id: req.params.attachmentId },
@@ -130,6 +225,24 @@ router.put('/:attachmentId', async (req, res) => {
   );
 });
 
+/**
+ * @swagger
+ * path:
+ *  /attachments/{attachmentId}:
+ *    delete:
+ *      summary: Delete an attachment by id
+ *      tags: [Attachments]
+ *      parameters:
+ *        - in: path
+ *          name: attachmentId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: Id of the attachment
+ *      responses:
+ *        "200":
+ *          description: The deleted attachment object
+ */
 router.delete('/:attachmentId', async (req, res) => {
   Attachment.findOneAndDelete(
     { _id: req.params.attachmentId },
@@ -144,18 +257,39 @@ router.delete('/:attachmentId', async (req, res) => {
   );
 });
 
+/**
+ * @swagger
+ * path:
+ *  /attachments/{attachmentId}/toggle:
+ *    post:
+ *      summary: Toggle the state of an attachment by ID
+ *               For attachments that have boolean characteristics
+ *               Switch from true to false and vice versa
+ *      tags: [Attachments]
+ *      consumes:
+ *        - application/json
+ *      parameters:
+ *        - in: path
+ *          name: attachmentId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: Id of the attachment
+ *      responses:
+ *        "200":
+ *          description: Toggled the attachment state
+ */
 router.post('/:attachmentId/toggle', async (req, res) => {
   try {
     const att = await Attachment.findById(req.params.attachmentId);
     if (att) {
       const device = await Device.findById(att.deviceId);
-      const room = await Room.findById(device.roomId);
       switch (att.type) {
         case AttachmentType.LIGHT:
         case AttachmentType.SOCKET:
           const isOn = att.characteristics.isOn;
           isOn.value = !isOn.value;
-          att.save(function(err, attachment) {
+          att.save((err, attachment) => {
             if (err) return console.error(err);
             const topic = att.type + 's/' + device._id + '/' + attachment.pin;
             const message = isOn.value ? 'on' : 'off';
@@ -163,11 +297,16 @@ router.post('/:attachmentId/toggle', async (req, res) => {
             mqtt.send(topic, message);
             res.status(200).send({ newValue: attachment });
           });
-
           break;
 
         default:
-          res.status(400).send('Unknown device type');
+          res
+            .status(400)
+            .send(
+              'Attachment type ' +
+                att.type +
+                ' does not have a boolean characteristic, e.g., cannot be toggled',
+            );
       }
     } else res.sendStatus(404);
   } catch (err) {

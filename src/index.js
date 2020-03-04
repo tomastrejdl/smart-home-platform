@@ -1,9 +1,8 @@
 const express = require('express');
-const devicesRouter = require('./api/devices');
-const attachmentsRouter = require('./api/attachments');
-const roomsRouter = require('./api/rooms');
 const cors = require('cors');
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
+
+const apiV1Router = require('./api/v1');
 
 const app = express();
 var http = require('http').createServer(app);
@@ -13,9 +12,7 @@ app.use(express.json());
 app.use(cors());
 app.options('*', cors()); // include before other routes
 
-app.use('/api/v1/devices', devicesRouter);
-app.use('/api/v1/attachments', attachmentsRouter);
-app.use('/api/v1/rooms', roomsRouter);
+app.use('/api/v1', apiV1Router);
 
 app.get('/', (req, res) => {
   res.send(`Use GET /api/v1/status to get the current state.

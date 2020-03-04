@@ -17,6 +17,8 @@
     "express-validator": "^6.4.0",
     "mongoose": "^5.9.1",
     "mqtt": "^3.0.0",
+    "swagger-jsdoc": "^3.5.0",
+    "swagger-ui-express": "^4.1.3",
     "tuyapi": "github:codetheweb/tuyapi"
   },
   "devDependencies": {
