@@ -1,15 +1,33 @@
 {
-  "name": "esp8266-led-strip",
-  "version": "1.0.0",
-  "description": "",
+  "name": "smart-home-platform",
+  "description": "Backend for Smart Home Platform by Tomáš Trejdl",
+  "version": "0.1.0",
   "main": "src/index.js",
   "scripts": {
     "start": "nodemon",
     "start:prod": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomastrejdl/smart-home-platform"
+  },
+  "keywords": [
+    "smart home",
+    "smart",
+    "home",
+    "smarthome"
+  ],
+  "author": {
+    "name": "Tomáš Trejdl",
+    "email": "tom.trejdl@seznam.cz",
+    "url": "https://github.com/tomastrejdl"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tomastrejdl/smart-home-platform/issues"
+  },
+  "homepage": "https://github.com/tomastrejdl/smart-home-platform",
   "dependencies": {
     "config": "^3.3.0",
     "cors": "^2.8.5",
@@ -31,5 +49,8 @@
       "data/*"
     ],
     "delay": "1000"
+  },
+  "engines": {
+    "node": "12.11.1"
   }
 }
