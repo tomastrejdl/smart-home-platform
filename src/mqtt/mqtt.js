@@ -6,6 +6,8 @@ const Device = require('../api/v1/model/Device');
 const Attachment = require('../api/v1/model/Attachment');
 const Event = require('../api/v1/model/Event');
 
+const EventType = require('../api/v1/declarations/event-type');
+
 /**
  * MQTT communication layer
  * Connect to MQTT broker
@@ -93,52 +95,71 @@ class Mqtt {
    */
   async onTemperatureEvent(payload) {
     if (!payload) return;
-    const attachment = await Attachment.findById(payload.attachmentId);
     const now = new Date();
     const today = now.setHours(0, 0, 0, 0);
 
-    const today_th = await Event.findOne({
-      type: 'temperature',
-      timestamp_day: today,
-    });
-    if (today_th) {
-      today_th.values.push(payload.temperature);
-      today_th.num_samples += 1;
-      today_th.totalTemp += payload.temperature;
-      today_th.save(err => err && console.error(err));
-    } else {
-      const th = new Event({
+    Event.findOneAndUpdate(
+      {
         attachmentId: payload.attachmentId,
-        type: 'temperature',
+        type: EventType.TEMPERATURE_HUMIDITY,
         timestamp_day: today,
-        num_samples: 1,
-        sum: payload.temperature,
-        values: [payload.temperature],
-      });
-      th.save(err => err && console.error(err));
-    }
+      },
+      {
+        $push: {
+          values: {
+            timestamp: new Date(),
+            temperature: payload.temperature,
+            humidity: payload.humidity,
+          },
+        },
+      },
+      { upsert: true },
+      err => err && console.error(err),
+    );
 
-    const today_hh = await Event.findOne({
-      type: 'humidity',
-      timestamp_day: today,
-    });
-    if (today_hh) {
-      today_th.values.push(payload.temperature);
-      today_th.num_samples += 1;
-      today_th.totalTemp += payload.temperature;
-      today_hh.save(err => err && console.error(err));
-    } else {
-      const hh = new Event({
-        attachmentId: payload.attachmentId,
-        type: 'humidity',
-        timestamp_day: today,
-        num_samples: 1,
-        sum: payload.humidity,
-        values: [payload.humidity],
-      });
-      hh.save(err => err && console.error(err));
-    }
+    // const today_th = await Event.findOne({
+    //   type: 'temperature',
+    //   timestamp_day: today,
+    // });
+    // if (today_th) {
+    //   today_th.values.push(payload.temperature);
+    //   today_th.num_samples += 1;
+    //   today_th.totalTemp += payload.temperature;
+    //   today_th.save(err => err && console.error(err));
+    // } else {
+    //   const th = new Event({
+    //     attachmentId: payload.attachmentId,
+    //     type: 'temperature',
+    //     timestamp_day: today,
+    //     num_samples: 1,
+    //     sum: payload.temperature,
+    //     values: [payload.temperature],
+    //   });
+    //   th.save(err => err && console.error(err));
+    // }
 
+    // const today_hh = await Event.findOne({
+    //   type: 'humidity',
+    //   timestamp_day: today,
+    // });
+    // if (today_hh) {
+    //   today_th.values.push(payload.temperature);
+    //   today_th.num_samples += 1;
+    //   today_th.totalTemp += payload.temperature;
+    //   today_hh.save(err => err && console.error(err));
+    // } else {
+    //   const hh = new Event({
+    //     attachmentId: payload.attachmentId,
+    //     type: 'humidity',
+    //     timestamp_day: today,
+    //     num_samples: 1,
+    //     sum: payload.humidity,
+    //     values: [payload.humidity],
+    //   });
+    //   hh.save(err => err && console.error(err));
+    // }
+
+    const attachment = await Attachment.findById(payload.attachmentId);
     attachment.characteristics.temperature.value = payload.temperature;
     attachment.characteristics.humidity.value = payload.humidity;
     attachment.save(err => err && console.error(err));
@@ -150,8 +171,7 @@ class Mqtt {
    */
   async onDoorEvent(payload) {
     if (!payload) return;
-    const now = new Date();
-    const today = now.setHours(0, 0, 0, 0);
+    const today = new Date().setHours(0, 0, 0, 0);
 
     Event.findOneAndUpdate(
       {
@@ -161,12 +181,13 @@ class Mqtt {
       },
       {
         $push: {
-          values: { timestamp: now, isOpen: payload.isOpen },
+          values: { timestamp: new Date(), isOpen: payload.isOpen },
         },
       },
       { upsert: true },
       err => err && console.error(err),
     );
+
     const attachment = await Attachment.findById(payload.attachmentId);
     attachment.characteristics.isOpen.value = payload.isOpen;
     attachment.save(err => err && console.log(err));

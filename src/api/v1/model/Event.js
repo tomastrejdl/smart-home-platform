@@ -37,7 +37,7 @@ const EventSchema = new Schema({
     type: String,
     enum: ['temperature', 'humidity', 'door'],
   },
-  timestamp_day: { type: Date, unique: true },
+  timestamp_day: Date,
   num_samples: Number,
   sum: Number,
   values: Schema.Types.Mixed,

@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
+
 const Device = require('../model/Device');
 const Attachment = require('../model/Attachment');
 const Room = require('../model/Room');
+const Event = require('../model/Event');
+
 const mqtt = require('../../../mqtt/mqtt');
-const AttachmentType = require('../model/attachment-type');
+const AttachmentType = require('../declarations/attachment-type');
+const EventType = require('../declarations/event-type');
 
 /**
  * @swagger
@@ -312,6 +316,53 @@ router.post('/:attachmentId/toggle', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send(err);
+  }
+});
+
+/**
+ * @swagger
+ * path:
+ *  /attachments/{attachmentId}/getTemperatureData:
+ *    get:
+ *      summary: Get temperature data of attachment by id
+ *      tags: [Attachments]
+ *      parameters:
+ *        - in: path
+ *          name: attachmentId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: Id of the attachment
+ *      responses:
+ *        "200":
+ *          description: Array of temperature events
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: array
+ */
+router.get('/:attachmentId/getTemperatureData', async (req, res) => {
+  try {
+    const attachment = await Attachment.findById(req.params.attachmentId);
+    if (attachment) {
+      if (attachment.type != AttachmentType.TEMPERATURE_SENSOR)
+        res.status(400).send({
+          error:
+            'Attachment ' + attachment._id + ' is not a temperature sensor',
+        });
+
+      const today = new Date().setHours(0, 0, 0, 0);
+      const event = await Event.findOne({
+        attachmentId: attachment._id,
+        type: EventType.TEMPERATURE_HUMIDITY,
+        timestamp_day: today,
+      });
+
+      res.send(event);
+    } else res.sendStatus(404);
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(404);
   }
 });
 
