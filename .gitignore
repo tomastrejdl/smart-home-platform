@@ -19,3 +19,8 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Frontend dist files
+/frontend-dist
+
+.env

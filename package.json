@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "main": "src/index.js",
   "scripts": {
-    "start": "nodemon",
-    "start:prod": "node src/index.js",
+    "prestart": "cd ../smart-home-frontend/ && npm run build && cp -R dist/ ../smart-home-platform/frontend-dist/",
+    "start": "node src/index.js",
+    "dev": "NODE_ENV=developement && nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -31,6 +32,7 @@
   "dependencies": {
     "config": "^3.3.0",
     "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-validator": "^6.4.0",
     "mongoose": "^5.9.1",
