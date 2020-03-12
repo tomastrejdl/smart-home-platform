@@ -5,30 +5,22 @@ const path = require('path');
 
 const apiV1Router = require('./api/v1');
 
-/* Dotenv config */
 const dotenv = require('dotenv');
 dotenv.config();
 
-/* SSL sertificates */
-const fs = require('fs');
-const options = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem'),
-};
-
 const app = express();
-var https = require('https').createServer(options, app);
+var http = require('http').createServer(app);
 
-/* Express stuff */
 app.use(express.json());
+
 app.use(cors());
 app.options('*', cors()); // include before other routes
+
 app.use('/api/v1', apiV1Router);
 
 // Serve static assets for frontend
 app.use(express.static('frontend-dist'));
 
-// Frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend-dist', 'index.html'));
 });
@@ -38,7 +30,7 @@ app.get('/api', (req, res) => {
     Use POST /api/v1/order with {targetState: state} to turn on/off.`);
 });
 
-https.listen(process.env.PORT);
+http.listen(process.env.PORT);
 console.log(`Server listening on port ${process.env.PORT}...`);
 
 // Mongoose setup

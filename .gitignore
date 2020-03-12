@@ -24,7 +24,3 @@ yarn-error.log*
 /frontend-dist
 
 .env
-
-# Certificates
-key.pem
-cert.pem
