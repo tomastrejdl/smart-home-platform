@@ -2,6 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
+const expressSanitizer = require('express-sanitizer');
+
+// Console log colors
+const chalk = require('chalk');
+const log = (topic, message) =>
+  console.log(chalk.black.bgGreenBright(`  ${topic}  `) + ' ' + message);
 
 const apiV1Router = require('./api/v1');
 
@@ -13,8 +19,20 @@ var http = require('http').createServer(app);
 
 app.use(express.json());
 
+// Mount express-sanitizer middleware here
+app.use(expressSanitizer());
+
 app.use(cors());
 app.options('*', cors()); // include before other routes
+
+app.all('/*', function(req, res, next) {
+  // replace an HTTP posted body property with the sanitized string
+  const sanitizedBody = req.sanitize(JSON.stringify(req.body));
+  log(req.method + ' ' + req.url, sanitizedBody);
+  // replace the request body with sanitized body
+  req.body = JSON.parse(sanitizedBody);
+  next();
+});
 
 app.get('/api', (req, res) => {
   res.send(`Use GET /api/v1/status to get the current state.
