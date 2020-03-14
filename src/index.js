@@ -37,7 +37,7 @@ app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", 'https://unpkg.com'],
+      scriptSrc: ["'self'", "'unsafe-eval'", 'https://unpkg.com'],
       connectSrc: ["'self'"],
       imgSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
