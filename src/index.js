@@ -10,6 +10,8 @@ const helmet = require('helmet');
 const chalk = require('chalk');
 const log = (topic, message) =>
   console.log(chalk.black.bgGreenBright(`  ${topic}  `) + ' ' + message);
+const warn = (topic, message) =>
+  console.log(chalk.black.bgYellow(`  ${topic}  `) + ' ' + message);
 
 const apiV1Router = require('./api/v1');
 
@@ -90,6 +92,10 @@ app.get('/*', (req, res) => {
 
 http.listen(process.env.PORT);
 console.log(`Server listening on port ${process.env.PORT}...`);
+warn(
+  'Info',
+  `Don't forget to build the frontend and copy the dist files to frontend-dist`,
+);
 
 // Mongoose setup
 mongoose.set('useFindAndModify', false);
