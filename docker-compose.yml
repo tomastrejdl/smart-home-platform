@@ -1,0 +1,13 @@
+version: '3.3'
+services:
+    mongod:
+        container_name: rpi3-mongodb3.2
+        restart: unless-stopped
+        volumes:
+            - '/data/db:/data/db'
+            - '/data/configdb:/data/configdb'
+        ports:
+            - '27017:27017'
+            - '28017:28017'
+        image: lowdef/rpi3-mongodb3.2
+        command: mongod --storageEngine mmapv1 --config /data/configdb/mongod.conf --noscripting
