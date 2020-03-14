@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const expressSanitizer = require('express-sanitizer');
 const mongoSanitize = require('express-mongo-sanitize');
+const helmet = require('helmet');
 
 // Console log colors
 const chalk = require('chalk');
@@ -20,17 +21,42 @@ var http = require('http').createServer(app);
 
 app.use(express.json());
 
+/* Helmet */
+app.use(helmet());
+
+// Sets "Referrer-Policy: same-origin".
+app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
+
+// Frameguard
+app.use(helmet.frameguard({ action: 'deny' }));
+
+/* Set Content-Security-Policy header */
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'none'"],
+      scriptSrc: ["'self"],
+      connectSrc: ["'self"],
+      imgSrc: ["'self"],
+      styleSrc: ["'self'"],
+    },
+  }),
+);
+
 // Mount express-sanitizer middleware here
 app.use(expressSanitizer());
 
 // Sanitize user-supplied data to prevent MongoDB Operator Injection
 app.use(mongoSanitize());
 
-app.use(cors());
-app.options('*', cors()); // include before other routes
+// Enable CORS in developement
+if (process.env.NODE_ENV == 'development') {
+  app.use(cors());
+  app.options('*', cors()); // include before other routes
+}
 
-/* USER INPUT SANITIYATION */
-app.all('/*', function(req, res, next) {
+/* USER INPUT SANITIZATION */
+app.use(function(req, res, next) {
   // replace HTTP posted data with the sanitized strings
   const sanitizedBody = req.sanitize(JSON.stringify(req.body));
   const sanitizedQuerry = req.sanitize(JSON.stringify(req.query));
@@ -46,6 +72,7 @@ app.all('/*', function(req, res, next) {
   next();
 });
 
+// Return api usage info
 app.get('/api', (req, res) => {
   res.send(`Use GET /api/v1/status to get the current state.
     Use POST /api/v1/order with {targetState: state} to turn on/off.`);
