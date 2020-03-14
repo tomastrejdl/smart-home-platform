@@ -357,8 +357,8 @@ router.get('/:attachmentId/getTemperatureData', async (req, res) => {
         type: EventType.TEMPERATURE_HUMIDITY,
         timestamp_day: today,
       });
-
-      res.send(event);
+      if (event) res.send(event);
+      else req.send([]);
     } else res.sendStatus(404);
   } catch (err) {
     console.error(err);
