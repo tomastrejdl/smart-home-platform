@@ -1,13 +1,14 @@
 const mqtt = require('mqtt');
 const config = require('config');
 const mqttConfig = config.get('mqtt');
+const logger = require('../utils/logger')('MQTT');
+const validator = require('validator');
 
 const Device = require('../api/v1/model/Device');
 const Attachment = require('../api/v1/model/Attachment');
 const Event = require('../api/v1/model/Event');
 
 const EventType = require('../api/v1/declarations/event-type');
-
 /**
  * MQTT communication layer
  * Connect to MQTT broker
@@ -46,8 +47,19 @@ class Mqtt {
       let payload;
       try {
         payload = JSON.parse(message.toString());
-      } catch (err) {}
-      console.log('MQTT: ', topic, payload);
+      } catch (err) {
+        logger.err(
+          'Received malformed JSON message: ',
+          message.toString(),
+          ' is not a valid JSON!',
+        );
+        return;
+      }
+
+      if (!payload) {
+        logger.err(topic, 'Missing payload');
+        return;
+      }
 
       if (this.listeners[topic]) {
         for (let i = 0; i < this.listeners[topic].length; i++)
@@ -65,6 +77,7 @@ class Mqtt {
           this.onDoorEvent(payload);
           break;
         default:
+          logger.log(topic, payload);
         // console.log('No handler for topic: ', topic);
       }
     });
@@ -78,14 +91,31 @@ class Mqtt {
    * @param {*} payload
    */
   async onDeviceState(payload) {
-    if (!payload) return;
-    const device = await Device.findOne({ macAddress: payload.macAddress });
-    if (device) {
-      device.isOnline = payload.isOnline;
-      if (payload.isOnline) this.sendConfigToDevice(payload.macAddress);
-      device.save(err => err && console.error(err));
-    } else {
-      console.log('Device ' + payload.macAddress + ' not yet setup');
+    // Validation
+    if (!payload.macAddress) {
+      logger.err('deviceState', 'Missing parameter: macAddress');
+      return;
+    }
+    if (!payload.isOnline) {
+      logger.err('deviceState', 'Missing parameter: isOnline');
+      return;
+    }
+    if (typeof payload.isOnline !== 'boolean') {
+      logger.err('door', 'Wrong parameter: isOnline must be a boolean');
+      return;
+    }
+    // end validation
+    try {
+      const device = await Device.findOne({ macAddress: payload.macAddress });
+      if (device) {
+        device.isOnline = payload.isOnline;
+        if (payload.isOnline) this.sendConfigToDevice(payload.macAddress);
+        device.save(err => err && console.error(err));
+      } else {
+        console.log('Device ' + payload.macAddress + ' not yet setup');
+      }
+    } catch (err) {
+      logger.err('Error: ', err);
     }
   }
 
@@ -94,75 +124,68 @@ class Mqtt {
    * @param {*} payload
    */
   async onTemperatureEvent(payload) {
-    if (!payload) return;
+    // Validation
+    if (!payload.attachmentId) {
+      logger.err('temperature', 'Missing parameter: attachmentId');
+      return;
+    }
+    if (!validator.isMongoId(payload.attachmentId)) {
+      logger.err(
+        'temperature',
+        'Wrong parameter: "' +
+          payload.attachmentId +
+          '" is not a valid Attachment identifier',
+      );
+      return;
+    }
+    if (!payload.temperature) {
+      logger.err('temperature', 'Missing parameter: temperature');
+      return;
+    }
+    if (typeof payload.temperature !== 'number') {
+      logger.err('door', 'Wrong parameter: temperature must be a number');
+      return;
+    }
+    if (!payload.humidity) {
+      logger.err('temperature', 'Missing parameter: humidity');
+      return;
+    }
+    if (typeof payload.humidity !== 'number') {
+      logger.err('door', 'Wrong parameter: humidity must be a number');
+      return;
+    }
+    // end validation
+
     const now = new Date();
     const today = now.setHours(0, 0, 0, 0);
 
-    Event.findOneAndUpdate(
-      {
-        attachmentId: payload.attachmentId,
-        type: EventType.TEMPERATURE_HUMIDITY,
-        timestamp_day: today,
-      },
-      {
-        $push: {
-          values: {
-            timestamp: new Date(),
-            temperature: payload.temperature,
-            humidity: payload.humidity,
+    try {
+      Event.findOneAndUpdate(
+        {
+          attachmentId: payload.attachmentId,
+          type: EventType.TEMPERATURE_HUMIDITY,
+          timestamp_day: today,
+        },
+        {
+          $push: {
+            values: {
+              timestamp: new Date(),
+              temperature: payload.temperature,
+              humidity: payload.humidity,
+            },
           },
         },
-      },
-      { upsert: true },
-      err => err && console.error(err),
-    );
+        { upsert: true },
+        err => err && console.error(err),
+      );
 
-    // const today_th = await Event.findOne({
-    //   type: 'temperature',
-    //   timestamp_day: today,
-    // });
-    // if (today_th) {
-    //   today_th.values.push(payload.temperature);
-    //   today_th.num_samples += 1;
-    //   today_th.totalTemp += payload.temperature;
-    //   today_th.save(err => err && console.error(err));
-    // } else {
-    //   const th = new Event({
-    //     attachmentId: payload.attachmentId,
-    //     type: 'temperature',
-    //     timestamp_day: today,
-    //     num_samples: 1,
-    //     sum: payload.temperature,
-    //     values: [payload.temperature],
-    //   });
-    //   th.save(err => err && console.error(err));
-    // }
-
-    // const today_hh = await Event.findOne({
-    //   type: 'humidity',
-    //   timestamp_day: today,
-    // });
-    // if (today_hh) {
-    //   today_th.values.push(payload.temperature);
-    //   today_th.num_samples += 1;
-    //   today_th.totalTemp += payload.temperature;
-    //   today_hh.save(err => err && console.error(err));
-    // } else {
-    //   const hh = new Event({
-    //     attachmentId: payload.attachmentId,
-    //     type: 'humidity',
-    //     timestamp_day: today,
-    //     num_samples: 1,
-    //     sum: payload.humidity,
-    //     values: [payload.humidity],
-    //   });
-    //   hh.save(err => err && console.error(err));
-    // }
-
-    const attachment = await Attachment.findById(payload.attachmentId);
-    attachment.characteristics.temperature.value = payload.temperature;
-    attachment.characteristics.humidity.value = payload.humidity;
-    attachment.save(err => err && console.error(err));
+      const attachment = await Attachment.findById(payload.attachmentId);
+      attachment.characteristics.temperature.value = payload.temperature;
+      attachment.characteristics.humidity.value = payload.humidity;
+      attachment.save(err => err && console.error(err));
+    } catch (err) {
+      logger.err('Error: ', err);
+    }
   }
 
   /**
@@ -170,27 +193,54 @@ class Mqtt {
    * @param {*} payload
    */
   async onDoorEvent(payload) {
-    if (!payload) return;
+    // Validation
+    if (!payload.attachmentId) {
+      logger.err('door', 'Missing parameter: attachmentId');
+      return;
+    }
+    if (!validator.isMongoId(payload.attachmentId)) {
+      logger.err(
+        'door',
+        'Wrong parameter: "' +
+          payload.attachmentId +
+          '" is not a valid Attachment identifier',
+      );
+      return;
+    }
+    if (!payload.isOpen) {
+      logger.err('door', 'Missing parameter: isOpen');
+      return;
+    }
+    if (typeof payload.isOpen !== 'boolean') {
+      logger.err('door', 'Wrong parameter: isOpen must be a boolean');
+      return;
+    }
+    // end validation
+
     const today = new Date().setHours(0, 0, 0, 0);
 
-    Event.findOneAndUpdate(
-      {
-        attachmentId: payload.attachmentId,
-        type: EventType.DOOR,
-        timestamp_day: today,
-      },
-      {
-        $push: {
-          values: { timestamp: new Date(), isOpen: payload.isOpen },
+    try {
+      Event.findOneAndUpdate(
+        {
+          attachmentId: payload.attachmentId,
+          type: EventType.DOOR,
+          timestamp_day: today,
         },
-      },
-      { upsert: true },
-      err => err && console.error(err),
-    );
+        {
+          $push: {
+            values: { timestamp: new Date(), isOpen: payload.isOpen },
+          },
+        },
+        { upsert: true },
+        err => err && console.error(err),
+      );
 
-    const attachment = await Attachment.findById(payload.attachmentId);
-    attachment.characteristics.isOpen.value = payload.isOpen;
-    attachment.save(err => err && console.log(err));
+      const attachment = await Attachment.findById(payload.attachmentId);
+      attachment.characteristics.isOpen.value = payload.isOpen;
+      attachment.save(err => err && console.log(err));
+    } catch (err) {
+      logger.err('Error: ', err);
+    }
   }
 
   // -----------------------------------------------------------------

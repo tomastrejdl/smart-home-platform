@@ -7,11 +7,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 
 // Console log colors
-const chalk = require('chalk');
-const log = (topic, message) =>
-  console.log(chalk.black.bgGreenBright(`  ${topic}  `) + ' ' + message);
-const warn = (topic, message) =>
-  console.log(chalk.black.bgYellow(`  ${topic}  `) + ' ' + message);
+const logger = require('./utils/logger');
 
 const apiV1Router = require('./api/v1');
 
@@ -64,7 +60,7 @@ app.use(function(req, res, next) {
   const sanitizedQuerry = req.sanitize(JSON.stringify(req.query));
   const sanitizedParams = req.sanitize(JSON.stringify(req.params));
 
-  log(req.method + ' ' + req.url, sanitizedBody);
+  logger(req.method + ' ' + req.url).log(sanitizedBody);
 
   // replace the request data with sanitized data
   req.body = JSON.parse(sanitizedBody);
@@ -92,8 +88,7 @@ app.get('/*', (req, res) => {
 
 http.listen(process.env.PORT);
 console.log(`Server listening on port ${process.env.PORT}...`);
-warn(
-  'Info',
+logger('INFO').warn(
   `Don't forget to build the frontend and copy the dist files to frontend-dist`,
 );
 
