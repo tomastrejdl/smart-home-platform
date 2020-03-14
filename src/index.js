@@ -36,11 +36,11 @@ app.use(helmet.frameguard({ action: 'deny' }));
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
-      defaultSrc: ["'none'"],
-      scriptSrc: ["'self'"],
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", 'https://unpkg.com'],
       connectSrc: ["'self'"],
       imgSrc: ["'self'"],
-      styleSrc: ["'self'"],
+      styleSrc: ["'unsafe-inline'"],
     },
   }),
 );
