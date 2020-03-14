@@ -39,7 +39,7 @@ app.use(
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-eval'", 'https://unpkg.com'],
       connectSrc: ["'self'", 'https://unpkg.com'],
-      imgSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+      imgSrc: ["'self'", 'data:', 'https://unpkg.com'],
       styleSrc: ["'self'", "'unsafe-inline'"],
     },
   }),
