@@ -3,6 +3,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 const expressSanitizer = require('express-sanitizer');
+const mongoSanitize = require('express-mongo-sanitize');
 
 // Console log colors
 const chalk = require('chalk');
@@ -22,15 +23,26 @@ app.use(express.json());
 // Mount express-sanitizer middleware here
 app.use(expressSanitizer());
 
+// Sanitize user-supplied data to prevent MongoDB Operator Injection
+app.use(mongoSanitize());
+
 app.use(cors());
 app.options('*', cors()); // include before other routes
 
+/* USER INPUT SANITIYATION */
 app.all('/*', function(req, res, next) {
-  // replace an HTTP posted body property with the sanitized string
+  // replace HTTP posted data with the sanitized strings
   const sanitizedBody = req.sanitize(JSON.stringify(req.body));
+  const sanitizedQuerry = req.sanitize(JSON.stringify(req.query));
+  const sanitizedParams = req.sanitize(JSON.stringify(req.params));
+
   log(req.method + ' ' + req.url, sanitizedBody);
-  // replace the request body with sanitized body
+
+  // replace the request data with sanitized data
   req.body = JSON.parse(sanitizedBody);
+  req.query = JSON.parse(sanitizedQuerry);
+  req.params = JSON.parse(sanitizedParams);
+
   next();
 });
 
