@@ -5,7 +5,7 @@ const Device = require('../model/Device');
 const Attachment = require('../model/Attachment');
 const Room = require('../model/Room');
 const mqtt = require('../../../mqtt/mqtt');
-
+const AttachmentType = require('../declarations/attachment-type');
 /**
  * @swagger
  * tags:
@@ -93,6 +93,7 @@ router.post(
   '/',
   [
     check('name')
+      .escape()
       .isString()
       .trim()
       .isLength(3),
@@ -142,23 +143,33 @@ router.post(
  *              schema:
  *                $ref: '#/components/schemas/Room'
  */
-router.put('/:roomId', async (req, res) => {
-  Room.findOneAndUpdate(
-    { _id: req.params.roomId },
-    req.body,
-    {
-      new: true,
-    },
-    (err, room) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
-      }
-      if (!room) res.sendStatus(404);
-      else res.status(200).send(room);
-    },
-  );
-});
+router.put(
+  '/:roomId',
+  [
+    check('name')
+      .escape()
+      .isString()
+      .trim()
+      .isLength(3),
+  ],
+  async (req, res) => {
+    Room.findOneAndUpdate(
+      { _id: req.params.roomId },
+      req.body,
+      {
+        new: true,
+      },
+      (err, room) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send(err);
+        }
+        if (!room) res.sendStatus(404);
+        else res.status(200).send(room);
+      },
+    );
+  },
+);
 
 /**
  * @swagger
@@ -233,7 +244,7 @@ router.post('/:roomId/toggleAllLights', async (req, res) => {
   );
   const attachments = await Attachment.find({
     deviceId: { $in: deviceIds },
-    type: 'light',
+    type: AttachmentType.LIGHT,
   });
 
   attachments.forEach(att => {

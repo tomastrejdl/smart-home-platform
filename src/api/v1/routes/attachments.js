@@ -10,6 +10,7 @@ const Event = require('../model/Event');
 const mqtt = require('../../../mqtt/mqtt');
 const AttachmentType = require('../declarations/attachment-type');
 const EventType = require('../declarations/event-type');
+const Pins = require('../declarations/pins');
 
 /**
  * @swagger
@@ -98,10 +99,12 @@ router.post(
   '/',
   [
     check('name')
+      .escape()
       .isString()
       .trim()
       .isLength(3),
     check('type')
+      .escape()
       .isString()
       .isIn([
         AttachmentType.LIGHT,
@@ -109,10 +112,16 @@ router.post(
         AttachmentType.TEMPERATURE_SENSOR,
         AttachmentType.DOOR_SENSOR,
       ]),
-    check('pin').isIn(['D1', 'D2', 'D3', 'D4']),
-    check('deviceId').isMongoId(),
+    check('pin')
+      .escape()
+      .isIn(Pins.ALL),
+    check('deviceId')
+      .escape()
+      .isMongoId()
+      .custom(value => {}),
   ],
   async (req, res) => {
+    // More validation
     const deviceIds = (await Device.find({})).map(device => device._id);
     await check('deviceId', 'Not a valid device id')
       .isIn(deviceIds)
@@ -132,6 +141,7 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(422).json({ errors: errors.array() });
     }
+    // end validation
 
     const attachment = new Attachment(req.body);
     switch (attachment.type) {
@@ -211,23 +221,77 @@ router.post(
  *              schema:
  *                $ref: '#/components/schemas/Attachment'
  */
-router.put('/:attachmentId', async (req, res) => {
-  Attachment.findOneAndUpdate(
-    { _id: req.params.attachmentId },
-    req.body,
-    {
-      new: true,
-    },
-    (err, attachment) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
-      }
-      if (!attachment) res.sendStatus(404);
-      else res.status(200).send(attachment);
-    },
-  );
-});
+router.put(
+  '/:attachmentId',
+  [
+    check('name')
+      .escape()
+      .isString()
+      .trim()
+      .isLength(3)
+      .optional({ nullable: true }),
+    check('type')
+      .escape()
+      .isString()
+      .isIn([
+        AttachmentType.LIGHT,
+        AttachmentType.SOCKET,
+        AttachmentType.TEMPERATURE_SENSOR,
+        AttachmentType.DOOR_SENSOR,
+      ])
+      .optional({ nullable: true }),
+    check('pin')
+      .escape()
+      .isIn(Pins.ALL)
+      .optional({ nullable: true }),
+    check('deviceId')
+      .escape()
+      .isMongoId()
+      .custom(value => {})
+      .optional({ nullable: true }),
+  ],
+  async (req, res) => {
+    // More validation
+    const deviceIds = (await Device.find({})).map(device => device._id);
+    await check('deviceId', 'Not a valid device id')
+      .isIn(deviceIds)
+      .optional({ nullable: true })
+      .run(req);
+
+    const usedPins = (
+      await Attachment.find({ deviceId: req.body.deviceId })
+    ).map(att => att.pin);
+    console.log(usedPins);
+
+    await check('pin', 'This pin is already used')
+      .not()
+      .isIn(usedPins)
+      .optional({ nullable: true })
+      .run(req);
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+    // end validation
+
+    Attachment.findOneAndUpdate(
+      { _id: req.params.attachmentId },
+      req.body,
+      {
+        new: true,
+      },
+      (err, attachment) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send(err);
+        }
+        if (!attachment) res.sendStatus(404);
+        else res.status(200).send(attachment);
+      },
+    );
+  },
+);
 
 /**
  * @swagger

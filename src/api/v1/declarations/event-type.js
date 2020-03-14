@@ -5,7 +5,11 @@
  *    const EventType = require('./event-type.js)
  *    if(event.type == EventType.DOOR) ...
  */
+const temperatureHumidity = 'temperature-humidity',
+  door = 'door';
+
 module.exports = {
-  TEMPERATURE_HUMIDITY: 'temperature-humidity',
-  DOOR: 'door',
+  ALL: [temperatureHumidity, door],
+  TEMPERATURE_HUMIDITY: temperatureHumidity,
+  DOOR: door,
 };

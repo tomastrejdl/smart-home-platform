@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const AttachmentType = require('../declarations/attachment-type');
+const Pins = require('../declarations/pins');
+
 /**
  * @swagger
  *  components:
@@ -86,11 +89,11 @@ let AttachmentSchema = new Schema({
   name: String,
   type: {
     type: String,
-    enum: ['light', 'socket', 'temperature-sensor', 'door-sensor'],
+    enum: AttachmentType.ALL,
   },
   pin: {
     type: String,
-    enum: ['D1', 'D2', 'D3', 'D4'],
+    enum: Pins.ALL,
   },
   deviceId: Schema.ObjectId,
   characteristics: {

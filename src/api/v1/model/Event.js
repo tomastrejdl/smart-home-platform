@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const EventType = require('../declarations/event-type');
+
 /**
  * @swagger
  *  components:
@@ -35,7 +37,7 @@ const EventSchema = new Schema({
   attachmentId: Schema.Types.ObjectId,
   type: {
     type: String,
-    enum: ['temperature', 'humidity', 'door'],
+    enum: EventType.ALL,
   },
   timestamp_day: Date,
   num_samples: Number,

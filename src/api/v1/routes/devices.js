@@ -120,15 +120,20 @@ router.post(
   '/',
   [
     check('name')
+      .escape()
       .isString()
       .trim()
       .isLength(3),
-    check('macAddress').isMACAddress(),
+    check('macAddress')
+      .escape()
+      .isMACAddress(),
     check('roomId')
+      .escape()
       .optional({ nullable: true })
       .isMongoId(),
   ],
   async (req, res) => {
+    // More validation
     const roomIds = (await Room.find({})).map(room => room._id);
     await check('roomId', 'Not a valid room id')
       .optional({ nullable: true })
@@ -145,6 +150,7 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(422).json({ errors: errors.array() });
     }
+    // end validation
 
     const device = new Device(req.body);
     device.isOnline = true;
@@ -186,23 +192,58 @@ router.post(
  *              schema:
  *                $ref: '#/components/schemas/Device'
  */
-router.put('/:deviceId', async (req, res) => {
-  Device.findOneAndUpdate(
-    { _id: req.params.deviceId },
-    req.body,
-    {
-      new: true,
-    },
-    (err, device) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).send(err);
-      }
-      if (!device) res.sendStatus(404);
-      else res.status(200).send(device);
-    },
-  );
-});
+router.put(
+  '/:deviceId',
+  [
+    check('name')
+      .isString()
+      .trim()
+      .isLength(3)
+      .escape()
+      .optional({ nullable: true }),
+    check('macAddress', 'Mac Address of a Device cannot be changed').isEmpty(),
+    check('roomId')
+      .optional({ nullable: true })
+      .isMongoId()
+      .escape(),
+  ],
+  async (req, res) => {
+    // More validation
+    const roomIds = (await Room.find({})).map(room => room._id);
+    await check('roomId', 'Not a valid room id')
+      .optional({ nullable: true })
+      .isIn(roomIds)
+      .run(req);
+
+    const usedMacs = (await Device.find({})).map(device => device.macAddress);
+    await check('macAddress', 'A device with this MAC adress is already setup')
+      .not()
+      .isIn(usedMacs)
+      .run(req);
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+    // end validation
+
+    Device.findOneAndUpdate(
+      { _id: req.params.deviceId },
+      req.body,
+      {
+        new: true,
+      },
+      (err, device) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send(err);
+        }
+        if (!device) res.sendStatus(404);
+        else res.status(200).send(device);
+      },
+    );
+  },
+);
 
 /**
  * @swagger

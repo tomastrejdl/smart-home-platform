@@ -176,7 +176,7 @@ class Mqtt {
     Event.findOneAndUpdate(
       {
         attachmentId: payload.attachmentId,
-        type: 'door',
+        type: EventType.DOOR,
         timestamp_day: today,
       },
       {
