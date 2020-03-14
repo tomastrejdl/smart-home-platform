@@ -40,7 +40,7 @@ app.use(
       scriptSrc: ["'self'", 'https://unpkg.com'],
       connectSrc: ["'self'"],
       imgSrc: ["'self'"],
-      styleSrc: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
     },
   }),
 );
