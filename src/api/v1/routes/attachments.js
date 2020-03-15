@@ -37,8 +37,16 @@ const Pins = require('../declarations/pins');
  *                  $ref: '#/components/schemas/Attachment'
  */
 router.get('/', async (req, res) => {
-  const attachments = await Attachment.find({}, err => err && console.log());
-  res.send(attachments);
+  let attachments = await Attachment.find({}, err => err && console.log());
+  res.send(
+    await Promise.all(
+      attachments.map(async att => {
+        const device = await Device.findById(att.deviceId);
+        const room = await Room.findById(device.roomId);
+        return { ...att.toObject(), room };
+      }),
+    ),
+  );
 });
 
 /**
@@ -66,7 +74,9 @@ router.get('/', async (req, res) => {
 router.get('/:attachmentId', async (req, res) => {
   try {
     const attachment = await Attachment.findById(req.params.attachmentId);
-    if (attachment) res.send(attachment);
+    const device = await Device.findById(attachment.deviceId);
+    const room = await Room.findById(device.roomId);
+    if (attachment) res.send({ ...attachment.toObject(), room });
     else res.sendStatus(404);
   } catch (err) {
     console.error(err);
@@ -117,8 +127,7 @@ router.post(
       .isIn(Pins.ALL),
     check('deviceId')
       .escape()
-      .isMongoId()
-      .custom(value => {}),
+      .isMongoId(),
   ],
   async (req, res) => {
     // More validation
@@ -422,11 +431,72 @@ router.get('/:attachmentId/getTemperatureData', async (req, res) => {
         timestamp_day: today,
       });
       if (event) res.send(event);
-      else req.send([]);
+      else res.send('NO DATA');
     } else res.sendStatus(404);
   } catch (err) {
     console.error(err);
     res.sendStatus(404);
+  }
+});
+
+/**
+ * @swagger
+ * path:
+ *  /attachments/{attachmentId}/invertCharacteristic:
+ *    post:
+ *      summary: Invert a characteristic of an attachment by ID
+ *               For attachments that have boolean characteristics
+ *               Switch from true to false and vice versa
+ *      tags: [Attachments]
+ *      consumes:
+ *        - application/json
+ *      parameters:
+ *        - in: path
+ *          name: attachmentId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: Id of the attachment
+ *      responses:
+ *        "200":
+ *          description: Inverted the characteristic
+ */
+router.post('/:attachmentId/invertCharacteristic', async (req, res) => {
+  try {
+    const att = await Attachment.findById(req.params.attachmentId);
+    if (att) {
+      const device = await Device.findById(att.deviceId);
+      switch (att.type) {
+        case AttachmentType.LIGHT:
+        case AttachmentType.SOCKET:
+          const isOn = att.characteristics.isOn;
+          isOn.invert = !isOn.invert;
+          break;
+
+        case AttachmentType.DOOR_SENSOR:
+          const isOpen = att.characteristics.isOpen;
+          isOpen.invert = !isOpen.invert;
+          break;
+
+        default:
+          res
+            .status(400)
+            .send(
+              'Attachment type ' +
+                att.type +
+                ' does not have a boolean characteristic, e.g., cannot be inverted',
+            );
+          return;
+      }
+      att.save((err, attachment) => {
+        if (err) return console.error(err);
+        mqtt.sendConfigToDevice(device.macAddress);
+        res.sendStatus(200);
+      });
+    } else res.sendStatus(404);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
   }
 });
 
