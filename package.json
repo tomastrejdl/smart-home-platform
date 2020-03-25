@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "chalk": "^3.0.0",
-    "nodemon": "^1.19.4"
+    "nodemon": "^2.0.2"
   },
   "nodemonConfig": {
     "ignore": [
