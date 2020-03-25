@@ -15,7 +15,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-var http = require('http').createServer(app);
+const http = require('http').createServer(app);
 
 app.use(express.json());
 
@@ -33,7 +33,12 @@ app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-eval'", 'https://unpkg.com'],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-eval'",
+        'https://unpkg.com',
+        'https://storage.googleapis.com',
+      ],
       connectSrc: ["'self'", 'https://unpkg.com'],
       imgSrc: ["'self'", 'data:', 'https://unpkg.com'],
       styleSrc: ["'self'", "'unsafe-inline'"],
