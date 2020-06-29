@@ -8,39 +8,52 @@
   </head>
   <body>
     <div
-      class="w-full min-w-screen h-full min-h-screen flex flex-col justify-between items-center"
+      class="flex flex-col items-center justify-between w-full h-full min-h-screen min-w-screen"
     >
-      <header
-        class="w-full flex justify-center items-center bg-blue-500 text-white px-8 py-16"
-      >
-        <div class="w-full max-w-4xl">
-          <h1 class="text-3xl font-semibold">
-            Smart Home platform by Tomáš Trejdl
-          </h1>
-          <div class="font-semibold text-gray-300">
-            <span>Bakalářská práce</span> | <span>FIT ČVUT</span> |
-            <span>2020</span>
-          </div>
+      <header class="flex justify-center w-full h-16">
+        <div class="flex items-center flex-1 max-w-4xl px-4">
+          <img src="assets/smarthome-logo.png" class="w-8 h-8" />
+          <img src="assets/logo-text.svg" class="h-6 ml-2" />
         </div>
       </header>
-
-      <main class="p-8">
-        <div class="w-full max-w-4xl">
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Aspernatur
-            labore odio suscipit, dolores nihil dolor neque voluptatem,
-            accusantium deleniti modi maxime? Quam earum voluptates aspernatur
-            dolore laborum eaque culpa perferendis velit amet omnis ipsum
-            consectetur molestias non debitis dolores vel delectus, error
-            aperiam quidem ullam iusto tempora in. Illum ratione reiciendis
-            inventore. Unde atque facilis libero possimus fugiat perspiciatis.
-            Soluta nemo odit tempore quos corrupti perspiciatis adipisci
-            corporis excepturi eveniet accusamus aut sapiente beatae laborum
-            molestias tempora provident, iusto repudiandae ipsa dignissimos quod
-            pariatur ratione unde incidunt! Aut eveniet officia hic aliquam,
-            dolore cupiditate temporibus, exercitationem natus at vero
-            molestias?
-          </p>
+      <main
+        class="flex items-center justify-center w-full py-24 text-white bg-blue-500"
+      >
+        <div class="w-full max-w-4xl px-4">
+          <h1 class="text-4xl font-semibold leading-tight sm:text-6xl">
+            <span class="tracking-wide uppercase">Smart Home platform</span
+            ><br /><span class="text-3xl">by</span>
+            <span class="">Tomáš Trejdl</span>
+          </h1>
+          <div class="mt-4 text-lg font-semibold text-gray-100">
+            <span class="mx-2">Bakalářská práce</span> |
+            <span class="mx-2">FIT ČVUT</span> |
+            <span class="mx-2">2020</span>
+          </div>
+          <ul class="flex mt-8">
+            <li class="mx-2">
+              <a
+                href="https://tomastrejdl.fra1.digitaloceanspaces.com/Prezentace_BP_Trejdl_Tomas_2020_29_Jun_2020.pdf"
+                class="flex items-center justify-center px-4 py-2 text-xl text-black bg-white rounded-lg"
+              >
+                <ion-icon name="easel-outline"></ion-icon>
+                <div class="ml-2">
+                  Prezentace
+                </div>
+              </a>
+            </li>
+            <li class="mx-2">
+              <a
+                href="https://tomastrejdl.fra1.digitaloceanspaces.com/BP_demo.mp4"
+                class="flex items-center justify-center px-4 py-2 text-xl text-black bg-white rounded-lg"
+              >
+                <ion-icon name="videocam-outline"></ion-icon>
+                <div class="ml-2">
+                  Video
+                </div>
+              </a>
+            </li>
+          </ul>
         </div>
       </main>
 
@@ -48,10 +61,13 @@
       <div class="flex-grow"></div>
 
       <footer
-        class="w-full flex justify-center items-center px-4 py-2 text-gray-700 border-t"
+        class="flex items-center justify-center w-full px-4 py-2 text-gray-700 border-t"
       >
-        <span>Tomáš Trejdl</span> | <span>2020</span>
+        <span class="mx-2">Tomáš Trejdl</span> | <span class="mx-2">2020</span>
       </footer>
     </div>
+
+    <!-- Ionicons -->
+    <script src="https://unpkg.com/ionicons@5.1.2/dist/ionicons.js"></script>
   </body>
 </html>
