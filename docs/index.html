@@ -3,58 +3,140 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart Home platform by Tomáš Trejdl</title>
     <link rel="stylesheet" href="style-output.css" />
+
+    <!-- Primary Meta Tags -->
+    <title>smarthome by Tomáš Trejdl</title>
+    <meta name="title" content="smarthome by Tomáš Trejdl" />
+    <meta
+      name="description"
+      content="Platforma pro chytrou domácnost, Bakalářská práce na FIT ČVUT, 2020"
+    />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://tomastrejdl.github.io/smart-home-platform/"
+    />
+    <meta property="og:title" content="smarthome by Tomáš Trejdl" />
+    <meta
+      property="og:description"
+      content="Platforma pro chytrou domácnost, Bakalářská práce na FIT ČVUT, 2020"
+    />
+    <meta property="og:image" content="assets/preview.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta
+      property="twitter:url"
+      content="https://tomastrejdl.github.io/smart-home-platform/"
+    />
+    <meta property="twitter:title" content="smarthome by Tomáš Trejdl" />
+    <meta
+      property="twitter:description"
+      content="Platforma pro chytrou domácnost, Bakalářská práce na FIT ČVUT, 2020"
+    />
+    <meta property="twitter:image" content="assets/preview.png" />
   </head>
+
   <body>
     <div
       class="flex flex-col items-center justify-between w-full h-full min-h-screen min-w-screen"
     >
       <header class="flex justify-center w-full h-16">
-        <div class="flex items-center flex-1 max-w-4xl px-4">
+        <div class="flex items-center flex-1 max-w-6xl px-4">
           <img src="assets/smarthome-logo.png" class="w-8 h-8" />
           <img src="assets/logo-text.svg" class="h-6 ml-2" />
         </div>
       </header>
-      <main
-        class="flex items-center justify-center w-full py-24 text-white bg-blue-500"
-      >
-        <div class="w-full max-w-4xl px-4">
-          <h1 class="text-4xl font-semibold leading-tight sm:text-6xl">
-            <span class="tracking-wide uppercase">Smart Home platform</span
-            ><br /><span class="text-3xl">by</span>
-            <span class="">Tomáš Trejdl</span>
-          </h1>
-          <div class="mt-4 text-lg font-semibold text-gray-100">
-            <span class="mx-2">Bakalářská práce</span> |
-            <span class="mx-2">FIT ČVUT</span> |
-            <span class="mx-2">2020</span>
+      <main class="w-full flex flex-col items-center">
+        <section
+          class="flex items-center justify-center w-full py-24 text-white bg-blue-500"
+        >
+          <div class="w-full max-w-6xl px-4 lg:flex gap-32">
+            <div class="">
+              <h1 class="text-4xl font-semibold leading-tight sm:text-6xl">
+                <span class="tracking-wide uppercase">SMART&nbsp;HOME</span
+                ><br /><span class="text-lg">by</span>
+                <span class="text-3xl">Tomáš Trejdl</span>
+              </h1>
+              <div class="text-lg font-semibold text-gray-100">
+                <span class="mr-2">Bakalářská práce</span> |
+                <span class="mx-2">FIT ČVUT</span> |
+                <span class="ml-2">2020</span>
+              </div>
+            </div>
+            <div class="py-4">
+              <img src="assets/iPad-screen.png" />
+            </div>
           </div>
-          <ul class="flex mt-8">
-            <li class="mx-2">
-              <a
-                href="https://tomastrejdl.fra1.digitaloceanspaces.com/Prezentace_BP_Trejdl_Tomas_2020_29_Jun_2020.pdf"
-                class="flex items-center justify-center px-4 py-2 text-xl text-black bg-white rounded-lg"
-              >
-                <ion-icon name="easel-outline"></ion-icon>
-                <div class="ml-2">
-                  Prezentace
-                </div>
-              </a>
-            </li>
-            <li class="mx-2">
-              <a
-                href="https://tomastrejdl.fra1.digitaloceanspaces.com/BP_demo.mp4"
-                class="flex items-center justify-center px-4 py-2 text-xl text-black bg-white rounded-lg"
-              >
-                <ion-icon name="videocam-outline"></ion-icon>
-                <div class="ml-2">
-                  Video
-                </div>
-              </a>
-            </li>
-          </ul>
-        </div>
+        </section>
+
+        <section class="max-w-6xl pt-8">
+          <div class="w-full max-w-4xl px-4">
+            <div class="mt-6">Odkazy</div>
+            <div class="font-semibold text-lg text-blue-500 underline">
+              <ul class="flex gap-4">
+                <li>
+                  <a href="https://dspace.cvut.cz/handle/10467/88706"
+                    >Text práce na DSpace CVUT</a
+                  >
+                </li>
+
+                <li class="mx-2">
+                  <a
+                    href="https://tomastrejdl.fra1.digitaloceanspaces.com/Prezentace_BP_Trejdl_Tomas_2020_29_Jun_2020.pdf"
+                    class="flex items-center justify-center"
+                  >
+                    <!-- <ion-icon name="easel-outline"></ion-icon> -->
+                    <div class="ml-2">Prezentace</div>
+                  </a>
+                </li>
+                <li class="mx-2">
+                  <a
+                    href="https://tomastrejdl.fra1.digitaloceanspaces.com/BP_demo.mp4"
+                    class="flex items-center justify-center"
+                  >
+                    <!-- <ion-icon name="videocam-outline"></ion-icon> -->
+                    <div class="ml-2">Video</div>
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-6">Studijní obor</div>
+            <div class="font-semibold text-lg">
+              Webové a softwarové inženýrství
+            </div>
+
+            <div class="mt-6">Studijní program</div>
+            <div class="font-semibold text-lg">Informatika</div>
+
+            <div class="mt-6">Instituce přidělující hodnost</div>
+            <div class="font-semibold text-lg">
+              Katedra softwarového inženýrství
+            </div>
+          </div>
+
+          <div class="px-4 mt-6">
+            <h2 class="font-semibold text-xl">Abstrakt</h2>
+            <p>
+              Chytrá domácnost je pojem, který označuje moderní domácnosti, kde
+              lze spotřebiče, osvětlení nebo jiná elektronická zařízení ovládat
+              na dálku prostřednictvím počítačové sítě a automatizovat jejich
+              funkce. Tato práce se zaměřuje na řešení problému interoperability
+              mezi produkty pro chytrou domácnost od různých výrobců. Práce
+              zkoumá existující komerční řešení a řešení typu \textit{Udělej si
+              sám} na trhu a dále se zabývá návrhem a implementací inteligentní
+              domácí platformy, která se snadno používá a lze ji rozšířit o
+              podporu různých zařízení. Výsledná platforma využívá připojení
+              Wi-Fi k ovládání světel a inteligentních zásuvek a čtení dat ze
+              senzorů teploty a vlhkosti a senzorů otevření dveří. Uživatel
+              interaguje s platformou prostřednictvím progresivní webové
+              aplikace spustitelné v moderním webovém prohlížeči.
+            </p>
+          </div>
+        </section>
       </main>
 
       <!-- Spacer -->
