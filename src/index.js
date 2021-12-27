@@ -99,7 +99,7 @@ logger('INFO').warn(
 
 // Mongoose setup
 mongoose.set('useFindAndModify', false);
-mongoose.connect('mongodb://localhost:27017/smarthome', {
+mongoose.connect(process.env.DATABASE_CONNECTIONSTRING, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });

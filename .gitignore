@@ -20,9 +20,6 @@ yarn-error.log*
 *.sln
 *.sw?
 
-# Frontend dist files
-/frontend-dist
-
 .env
 
 # Certificates
