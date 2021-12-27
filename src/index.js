@@ -85,7 +85,7 @@ app.get('/api', (req, res) => {
 app.use('/api/v1', apiV1Router);
 
 /* Serve static assets for frontend */
-const FRONT_END_DIST_PATH = '../../smart-home-frontend/dist'
+const FRONT_END_DIST_PATH = './frontend-dist'
 app.use(express.static(path.join(__dirname, FRONT_END_DIST_PATH)));
 
 app.get('/*', (req, res) => {

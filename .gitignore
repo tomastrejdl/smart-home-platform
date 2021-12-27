@@ -25,3 +25,6 @@ yarn-error.log*
 # Certificates
 key.pem
 cert.pem
+
+# Frontend build files
+/frontend-dist
